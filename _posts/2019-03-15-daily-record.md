@@ -45,3 +45,74 @@ But in the promoted chart, it is impossible to analyse only one process before a
 - The amount of processes on production line before and after
 - The changes of the whole C/T and C/O , amount of time percentage which be reduced before and after
 - The amount of workers that reduced ( But I cannot sure beacuse not everytime the workers can be reduced)
+
+
+
+# 2019-10-17 Thur.
+
+在 Groovy 之中，闭包 （clousure） 是一个很有趣，也有点难上手的东西。
+
+下面这段代码之中去掉了敏感信息。
+
+```groovy
+ for (Product p : ProductList) {
+                List<PromotionItem> discountedList = groupedList[p.id]
+                p.variations = p.variations.collect { v ->
+                    new ProductVariation(
+                        id: v.id,
+                        name: v.name
+                    )
+                }
+  }
+```
+
+其中这个 v 我一开始看到觉得不明所以，后来在询问前辈之后发现其用法。下面是解释：
+
+v，和其默认的 it 一样，是内部操作的一个变量。这个 collect 函数很迷的地方在于，点进去你会发现这个函数：
+
+```groovy
+ /**
+     * Iterates through this collection transforming each entry into a new value using the <code>transform</code> closure
+     * returning a list of transformed values.
+     * <pre class="groovyTestCase">assert [2,4,6] == [1,2,3].collect { it * 2 }</pre>
+     *
+     * @param self      a collection
+     * @param transform the closure used to transform each item of the collection
+     * @return a List of the transformed values
+     * @since 1.0
+     */
+    public static <S,T> List<T> collect(Collection<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        return (List<T>) collect(self, new ArrayList<T>(self.size()), transform);
+    }
+```
+
+看看这个注释，一个叫做 collect 的函数，作用居然是 将整个数据按照 clousure 里面的代码规则进行处理之后再返回。为啥能有底气这么叫呢？再点进去实现咱看看。
+
+```groovy
+   /**
+     * Iterates through this collection transforming each value into a new value using the <code>transform</code> closure
+     * and adding it to the supplied <code>collector</code>.
+     * <pre class="groovyTestCase">assert [1,2,3] as HashSet == [2,4,5,6].collect(new HashSet()) { (int)(it / 2) }</pre>
+     *
+     * @param self      a collection
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the closure used to transform each item of the collection
+     * @return the collector with all transformed values added to it
+     * @since 1.0
+     */
+    public static <T,E> Collection<T> collect(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
+        for (E item : self) {
+            collector.add(transform.call(item));
+            if (transform.getDirective() == Closure.DONE) {
+                break;
+            }
+        }
+        return collector;
+    }
+```
+
+看，对于每个 item， 都会进行 transfer， 然后再返回。
+
+那么再回头看第一个代码块就很清楚了：作用就是按照闭包里面的内容，将 product p 里面的内容进行匹配 ProductVariation， 再将这个新创建的 ProductVariation 返回给外部的 p.variation。
+
+太有趣了……
