@@ -421,3 +421,74 @@ ports:
 Specify configuration related to the deployment and running of services.
 
 Only take effect when deploying to a swarm with docker stack deploy, and is ignored by `docker-compose up` and `docker-compose run`
+
+**Mode**
+
+Either `global` (exactly one container per swarm node) or `replicated` (a specified number of containers). The default is `replicated`. (To learn more, see [Replicated and global services](https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/#replicated-and-global-services) in the [swarm](https://docs.docker.com/engine/swarm/) topics.)
+
+```yaml
+version: "3.7"
+services:
+  worker:
+    image: dockersamples/examplevotingapp_worker
+    deploy:
+      mode: global
+```
+
+**Placement**
+
+Specify placement of constraints and preferences. 
+
+```yaml
+version: "3.7"
+services:
+  db:
+    image: postgres
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+          - engine.labels.operatingsystem == ubuntu 14.04
+        preferences:
+          - spread: node.labels.zone
+```
+
+**Update_Config**
+
+Config how the service should be updated. useful for configuring rolling updates.
+
+- `parallelism`: The number of containers to update at a time.
+- `delay`: The time to wait between updating a group of containers.
+- `failure_action`: What to do if an update fails. One of `continue`, `rollback`, or `pause` (default: `pause`).
+- `monitor`: Duration after each task update to monitor for failure `(ns|us|ms|s|m|h)` (default 0s).
+- `max_failure_ratio`: Failure rate to tolerate during an update.
+- `order`: Order of operations during updates. One of `stop-first` (old task is stopped before starting new one), or `start-first` (new task is started first, and the running tasks briefly overlap) (default `stop-first`) **Note**: Only supported for v3.4 and higher.
+
+```yaml
+version: "3.7"
+services:
+  vote:
+    image: dockersamples/examplevotingapp_vote:before
+    depends_on:
+      - redis
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+```
+
+**Healthcheck**
+
+Configure a check that’s run to determine whether or not containers for this service are “healthy”. 
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost"]
+  interval: 1m30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+```
+
