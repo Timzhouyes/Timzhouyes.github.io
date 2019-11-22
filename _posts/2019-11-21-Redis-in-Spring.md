@@ -122,3 +122,37 @@ Spring-data-redis 针对 jedis 提供了如下功能：
 - Redis的哈希值是字符串字段和字符串之间的映射。
 - 哈希之中的字段数量没有限制，所以可以在应用程序用不同的方式来使用哈希
 
+#  RedisConfig
+
+在RedisConfig 之中，有：
+
+- CacheManager : 选择 Redis 作为默认的缓存工具
+- RedisTemplate : 配置连接工厂，并且配置序列化和反序列化redis的value的方法与序列化模式
+- 对各种类型的操作：String , List , Set , ZSet , Hash。但是大部分只是封装本身具有的方法
+
+> 对于封装本身就有的方法的情况，一般是新建一个类，对于这个类的某些参数进行默认配置的情况才会做很多个的封装。在本教程之中的这个封装必要性不大。
+
+# RedisService
+
+这个又犯了我们前面所说这个“没有必要封装”的问题。很多都是针对RedisTemplate自己所有的方法进行单纯包装而已。但是还是总结一下。
+
+- boolean existsKey ： 检查 Key 是否存在
+- void renameKey：重命名Key。如果newKey已经存在就覆盖newKey的原值
+- renameKeyNotExist：在newKey不存在的时候才进行重命名。
+- deleteKey(String key)：删除Key
+- deleteKeys：删除多个Key
+- deleteKey(Collection\<String> keys)：删除 Key的集合
+- void expireKey：设置Key的生命周期
+- void expireKeyAt：指定key 在指定的日期过期
+- long getKeyExpire: 查询key的生命周期
+- void persistKey：将Key设置为永远有效
+
+# RedisKeyUtil
+
+是Redis的Key工具类。redis的key形式为：表名：主键名：主键值：列名
+
+# 注解缓存的使用
+
+- `@Cacheable`：在方法执行之前Spring先查看缓存之中是否有数据，如果有数据，则直接返回缓存数据；没有则调用方法并将方法返回值放入缓存
+- `@CachePut`：将方法的返回值放入缓存
+- `@CacheEvict`： 将缓存之中的数据删除掉。
