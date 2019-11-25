@@ -62,4 +62,5 @@ Above we mentioned that we have load-balancer. So in the annotation above we can
 
 First of all, a central concept of Spring Cloud's Feign support is that the named client. This is used for build a group of components combine together to achieve one goal. And this is defined by the name of FeignClient, which we mentioned above. 
 
-Spring Cloud created a new ensemble 
+Spring Cloud created a new ensemble as an `ApplicationContext` on demand for each command. 
+
