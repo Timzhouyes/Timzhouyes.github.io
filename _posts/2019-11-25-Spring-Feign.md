@@ -54,3 +54,12 @@ public interface StoreClient {
 
 In code above, we have created one `@FeignClient('stores')` .This one is used to create the load-balancer in either `Ribbon` or `Spring Cloud LoadBalancer`.
 
+Can also specify a URL using `url` attribute, but not recommanded. If there is part of url for all, we should put it into configuration file, so that we can change it easily. Not only the url case, but other cases ,if usually used, we should use configuration file to "One defination, everywhere use".
+
+Above we mentioned that we have load-balancer. So in the annotation above we can use it to discover addresses for 'stores' service. 
+
+## Overriding Feign Defaults
+
+First of all, a central concept of Spring Cloud's Feign support is that the named client. This is used for build a group of components combine together to achieve one goal. And this is defined by the name of FeignClient, which we mentioned above. 
+
+Spring Cloud created a new ensemble 
