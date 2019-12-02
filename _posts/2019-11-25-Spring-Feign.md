@@ -62,5 +62,97 @@ Above we mentioned that we have load-balancer. So in the annotation above we can
 
 First of all, a central concept of Spring Cloud's Feign support is that the named client. This is used for build a group of components combine together to achieve one goal. And this is defined by the name of FeignClient, which we mentioned above. 
 
-Spring Cloud created a new ensemble as an `ApplicationContext` on demand for each command. 
+Spring Cloud created a new ensemble as an `ApplicationContext` on demand for each command by `FeignClientConfiguration`.(Also can shown the concept of Spring Boot, which write Configuration Class rather than .xml or other files). This contains an `feign.Decoder`, `feign.Encoder` and `feign.Contract` 
 
+Besides the `FeignClientConfiguration`, we can also use additional configuration on the Interface or Class which uses Feign, such as:
+
+```java
+@FeignClient(name = "stores", configuration = FooConfiguration.class)
+public interface StoreClient {
+    //..
+}
+```
+
+On the example above, we can find we use `@FeignClient` to customersize our class besides the `FeignClientConfiguration` class.  
+
+**This interface `StoreClient` is designed by  `FeignClientConfiguration` and `FooConfiguration` **
+
+> **`FooConfiguration` does not need to be annotated with `@Configuration`.** However, if it is, then take care to exclude it from any `@ComponentScan` that would otherwise include this configuration as it will become the default source for `feign.Decoder`, `feign.Encoder`, `feign.Contract`, etc., when specified. This can be avoided by putting it in a separate, non-overlapping package from any `@ComponentScan` or `@SpringBootApplication`, or it can be explicitly excluded in `@ComponentScan`.
+
+Also, placeholder is supported in `name` and `url` attributes.
+
+```java
+@FeignClient(name = "${feign.name}", url = "${feign.url}")
+public interface StoreClient {
+    //..
+}
+```
+
+Spring Cloud Netfilx provides the following beans by default for feign(`BeanType` beanName: `ClassType`)
+
+- `Decoder` feignDecoder: `ResponseEntityDecoder` (which wraps a `SpringDecoder`)
+- `Encoder` feignEncoder: `SpringEncoder`
+- `Logger` feignLogger: `Slf4jLogger`
+- `Contract` feignContract: `SpringMvcContract`
+- `Feign.Builder` feignBuilder: `HystrixFeign.Builder`
+- `Client` feignClient: if Ribbon is in the classpath and is enabled it is a `LoadBalancerFeignClient`, otherwise if Spring Cloud LoadBalancer is in the classpath, `FeignBlockingLoadBalancerClient` is used. If none of them is in the classpath, the default feign client is used.
+
+We can also use `OkHttpClient` and `ApacheHttpClient` ,by `feign.okhttp.enabled` and `feign.httpClient.enabled`. 
+
+Below is the beans not be provided default by bean, but can be looked up from the application context to create feign client. 
+
+- `Logger.Level`
+- `Retryer`
+- `ErrorDecoder`
+- `Request.Options`
+- `Collection`
+- `SetterFactory`
+- `QueryMapEncoder`
+
+These can be created by `@Bean` in a `@FeignClient` configuration(such as `FooConfiguration` ) allows to override each one of bean described.
+
+```java
+@Configuration
+public class FooConfiguration {
+    @Bean
+    public Contract feignContract() {
+        return new feign.Contract.Default();
+    }
+
+    @Bean
+    public BasicAuthRequestInterceptor basicAuthRequestInterceptor() {
+        return new BasicAuthRequestInterceptor("user", "password");
+    }
+}
+```
+
+This replaces the `SpringMvcContract` with `feign.Contract.default` , and adds a `RequestInterceptor` to the collection of `RequestInterceptor` .
+
+`@FeignClient` can also be configurated by configuration properties.
+
+application.yml
+
+```yaml
+feign:
+  client:
+    config:
+      feignName:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: full
+        errorDecoder: com.example.SimpleErrorDecoder
+        retryer: com.example.SimpleRetryer
+        requestInterceptors:
+          - com.example.FooRequestInterceptor
+          - com.example.BarRequestInterceptor
+        decode404: false
+        encoder: com.example.SimpleEncoder
+        decoder: com.example.SimpleDecoder
+        contract: com.example.SimpleContract
+```
+
+In this way, all configurations can be configued by this and be applied to all Feign Clients.
+
+**What if we have `@Configuration` and configuration properties?**
+
+> Configuration properties will win. It will override @Configuration values.
