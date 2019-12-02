@@ -291,3 +291,33 @@ public class FooConfiguration {
 }
 ```
 
+## Feign @QueryMap support
+
+The OpenFeign `@QueryMap` annotation provides support for POJOs to be used as GET parameter maps. Unfortunately, the default OpenFeign QueryMap annotation is incompatible with Spring because it lacks a `value` property.
+
+Spring Cloud OpenFeign provides an equivalent `@SpringQueryMap` annotation, which is used to annotate a POJO or Map parameter as a query parameter map.
+
+For example, the `Params` class defines parameters `param1` and `param2`:
+
+```java
+// Params.java
+public class Params {
+    private String param1;
+    private String param2;
+
+    // [Getters and setters omitted for brevity]
+}
+```
+
+The following feign client uses the `Params` class by using the `@SpringQueryMap` annotation:
+
+```java
+@FeignClient("demo")
+public interface DemoTemplate {
+
+    @GetMapping(path = "/demo")
+    String demoEndpoint(@SpringQueryMap Params params);
+}
+```
+
+If you need more control over the generated query parameter map, you can implement a custom `QueryMapEncoder` bean.
