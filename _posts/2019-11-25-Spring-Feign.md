@@ -155,4 +155,139 @@ In this way, all configurations can be configued by this and be applied to all F
 
 **What if we have `@Configuration` and configuration properties?**
 
-> Configuration properties will win. It will override @Configuration values.
+> Configuration properties will win. It will override @Configuration values. And we can change the property by change `feign.client.default-to-properties` to false.
+
+If we need to use `threadLocal` bound variables in `RequestIntercepter`, we need to set the thread isolation strategy for Hystrix to `SEMAPHORE` , or disable Hystrix in Feign.
+
+```yaml
+# To disable Hystrix in Feign
+feign:
+  hystrix:
+    enabled: false
+
+# To set thread isolation to SEMAPHORE
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          strategy: SEMAPHORE
+```
+
+If we want to create different feign clients with the same URL or name, so that they can **point to the same server** but each with a different custom configuration then we have to use `contextId` attribute of `@FeignClient` in order to avoid name collision of these configuration beans.
+
+```java
+@FeignClient(contextId = "fooClient", name = "stores", configuration = FooConfiguration.class)
+public interface FooClient {
+    //..
+}
+```
+```java
+@FeignClient(contextId = "barClient", name = "stores", configuration = BarConfiguration.class)
+public interface BarClient {
+    //..
+}
+```
+
+## Creating Feign Clients Manually
+
+In some cases it is hard to create Feign Clients by our way, so we can use `Feign Builder API`, below is example which create 2 Feign Clients with the same interface, but configure each one with a separate request interceptor.
+
+```java
+@Import(FeignClientsConfiguration.class)
+class FooController {
+
+    private FooClient fooClient;
+
+    private FooClient adminClient;
+
+        @Autowired
+    public FooController(Decoder decoder, Encoder encoder, Client client, Contract contract) {
+        this.fooClient = Feign.builder().client(client)
+                .encoder(encoder)
+                .decoder(decoder)
+                .contract(contract)
+                .requestInterceptor(new BasicAuthRequestInterceptor("user", "user"))
+                .target(FooClient.class, "https://PROD-SVC");
+
+        this.adminClient = Feign.builder().client(client)
+                .encoder(encoder)
+                .decoder(decoder)
+                .contract(contract)
+                .requestInterceptor(new BasicAuthRequestInterceptor("admin", "admin"))
+                .target(FooClient.class, "https://PROD-SVC");
+    }
+}
+```
+
+> `PROD-SVC` is the name of the service the Clients will be making requests to.
+>
+>  The Feign `Contract` object defines what annotations and values are valid on interfaces. The autowired `Contract` bean provides supports for SpringMVC annotations, instead of the default Feign native annotations.
+
+## Feign and `@Primary` 
+
+When using Feign with Hystrix callback, there are multiple beans in the `ApplicationContext` of the same type, which will cause `@Autowired` not work cause there are several beans suit the condition. So that Spring Cloud Netflix marks all Feign instances as `@Primary`, so Spring Framework will know which bean to inject. 
+
+To turn off the behavior, set the `primary` of `@FeignClient` to false.
+
+## Feign Inheritance Support
+
+UserService.java
+
+```java
+public interface UserService {
+
+    @RequestMapping(method = RequestMethod.GET, value ="/users/{id}")
+    User getUser(@PathVariable("id") long id);
+}
+```
+
+UserResource.java
+
+```java
+@RestController
+public class UserResource implements UserService {
+
+}
+```
+
+UserClient.java
+
+```java
+package project.user;
+
+@FeignClient("users")
+public interface UserClient extends UserService {
+
+}
+```
+
+## Feign Logging
+
+A logger is created for each Feign client created. By default the name of the logger is the full class name of the interface used to create the Feign client. Feign logging only responds to the `DEBUG` level.
+
+application.yml
+
+```yaml
+logging.level.project.user.UserClient: DEBUG
+```
+
+The `Logger.Level` object that you may configure per client, tells Feign how much to log. Choices are:
+
+- `NONE`, No logging (**DEFAULT**).
+- `BASIC`, Log only the request method and URL and the response status code and execution time.
+- `HEADERS`, Log the basic information along with request and response headers.
+- `FULL`, Log the headers, body, and metadata for both requests and responses.
+
+For example, the following would set the `Logger.Level` to `FULL`:
+
+```java
+@Configuration
+public class FooConfiguration {
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+}
+```
+
