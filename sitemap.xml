@@ -9,98 +9,298 @@
 
 <url>
   <loc>https://timzhouyes.github.io/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>1.00</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/about/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/tags/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/12/13/CORS/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/12/05/Chrome-Cache-host/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/27/K8s-related/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/25/Spring-Feign/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/21/Redis-in-Spring/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/19/K8s-notes/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/18/K8s-tutorial/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/12/DockerCompose/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/08/%E5%B7%A5%E4%BD%9C%E6%9D%82%E8%B0%88RedisSpringBean/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/11/01/SpringFeign/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/22/MyInfo/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/15/Go%E8%AF%AD%E8%A8%80/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/15/Java%E9%98%BF%E9%87%8C/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/14/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/11/Shell/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/11/MyBatis/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/10/Groovy/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/10/01/%E9%AB%98%E6%80%A7%E8%83%BD%E9%AB%98%E5%8F%AF%E7%94%A8/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/09/27/Linux/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/09/26/AOP/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/09/25/Java(2)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/09/22/MQ/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/09/04/Java(1)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/08/27/Redis/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/08/03/Salesforce/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/26/Django/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/23/Python%E5%AD%A6%E4%B9%A0/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/11/%E5%90%8E%E7%AB%AF%E9%9D%A2%E8%AF%95/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/10/SLB/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/09/MySql%E5%BC%95%E6%93%8E/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/07/08/%E6%B5%85%E8%B0%88Java%E4%B9%8B%E4%B8%AD%E7%9A%84HashMap/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/21/Angular-programming-style/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/14/JavaScript%E5%9F%BA%E7%A1%80%E5%AD%A6%E4%B9%A0(2)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/09/JavaScript%E5%9F%BA%E7%A1%80%E5%AD%A6%E4%B9%A0(1)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/07/Angular(1)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/06/Spring-Boot(4)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/05/05/Algorithm-issues/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/04/29/Spring-Boot(3)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/04/26/MVC-MVP-MVVM/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/04/24/Spring-Boot(2)/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/23/Spring-Boot(1)/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/18/Docker-Study/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/15/JavaScript-let-var/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/11/Node.js-https/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/03/JWT-Things/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/04/03/WangLuoShiZenYangLianJieDe/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/03/27/AngularJS-Tutorial-learning/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/03/21/%E7%BD%91%E7%BB%9C%E7%9B%B8%E5%85%B3/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/03/19/Daily-record(Angular-start)/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/03/18/Angular-study-record(1)/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/03/15/daily-record/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/03/13/SHA-Study/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/03/12/Git-Study/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/03/11/Intern-record/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://timzhouyes.github.io/2019/02/25/Markdown-basic-grammer/</loc>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
   <priority>0.80</priority>
 </url>
 <url>
   <loc>https://timzhouyes.github.io/2019/01/13/Zhou's-1st-post/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
-</url>
-<url>
-  <loc>https://timzhouyes.github.io/2019/02/25/Markdown-basic-grammer/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
-</url>
-<url>
-  <loc>https://timzhouyes.github.io/2019/03/15/daily-record/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
-</url>
-<url>
-  <loc>https://timzhouyes.github.io/2019/03/13/SHA-Study/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
-</url>
-<url>
-  <loc>https://timzhouyes.github.io/2019/03/12/Git-Study/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
-</url>
-<url>
-  <loc>https://timzhouyes.github.io/2019/03/11/Intern-record/</loc>
-  <lastmod>2019-04-24T03:06:09+00:00</lastmod>
-  <priority>0.64</priority>
+  <lastmod>2019-12-16T08:47:10+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 
 
