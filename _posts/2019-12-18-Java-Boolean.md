@@ -16,6 +16,8 @@ tags:								#标签
 
 因为是第一篇，所以先尝试使用分段解释的方法。以后可能会有改动。
 
+# 总概
+
 首先是这个类的作用：
 
 ```java
@@ -34,17 +36,31 @@ tags:								#标签
  * @author  Arthur van Hoff
  * @since   JDK1.0
  */
+public final class Boolean implements java.io.Serializable,
+                                      Comparable<Boolean>
+{
 ```
 
 这里很明显的解释了曾经的那个疑惑：为什么java要对一种数据类型弄两套？ 比如 int 和 Integer, boolean 和 Boolean。下面就是：
 
 Java 是一门面向对象的语言，但是 Java 之中的基本数据类型却不是面向对象的。这在实际使用的过程之中，发生了很多的不便。因此为弥补这个不足，在设计时候为了每一种基本数据类型设计了一个对应的类作为代表，这也就是 Wrapper Class。本文之中的 Boolean 就是一种 Wrapper Class。
 
-下面也是
+
+
+下面是为什么 Java之中会有基本类型和对象的原因：
+
+1. java 之中，基本类型定义的变量是存在栈之中，而例如 `Integer j = new Integer(10);` 之中， j 作为对象的引用，存放在栈之中，但是实际的值存在于堆之中，堆的速度远远不及栈。
+2. java 之中，基本类型定义的变量，创建和销毁很快，但是类定义的变量还是需要 JVM 去销毁。
+
+也就是说，理论上面基本类型的速度更快，包括创建，读写等等。但是这也使得在使用Java的过程之中如果想要面向对象带来了不便，因此有了Wrapper Class。
 
 
 
+在这个类之中，只有一个类型是 boolean 的 field。
 
+
+
+可见其implement了 `Serializable` 和 `Comparable<Boolean>` 
 
 
 
