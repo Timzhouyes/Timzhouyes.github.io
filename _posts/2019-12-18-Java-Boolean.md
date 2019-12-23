@@ -60,7 +60,9 @@ Java 是一门面向对象的语言，但是 Java 之中的基本数据类型却
 
 
 
-可见其implement了 `Serializable` 和 `Comparable<Boolean>` 
+可见其implement了 `Serializable` 和 `Comparable<Boolean>` ，这两个类我们之后会进行进一步的梳理。
+
+
 
 
 
