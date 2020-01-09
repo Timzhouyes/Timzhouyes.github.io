@@ -102,5 +102,9 @@ friends: [
    {
         title: "Google Developer",
         href: "https://developers.google.com"
+    },
+    {
+      title: "呼延十",
+        href: "http://huyan.couplecoders.tech/"
     }
 ]
