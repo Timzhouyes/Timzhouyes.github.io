@@ -117,5 +117,68 @@ public class BinarySearch {
 5. 在Java之中，例如 `Counter[]` 这种内部存储的是 `Counter`的地址而非值。所以其在对象的体积很大的时候可以起到增加效率的作用（地址不会因为数据量大而变大），但对于体积小的对象反而是一种浪费（拿到地址之后还要查找值，不如直接操作值快一些）
 6. 正则表达式之中，典型的字符串处理代码是`"\\s+`，其表示一个或者多个制表符，空格，换行符或者回车。
 
-#### 1.2.2 抽象数据类型的实现
+#### 1.2.5 数据类型的设计
 
+##### 等价性
+
+等价性需要：
+
+1. 自反性：`x.equals(x)`必须为true
+2. 对称性：当且仅当`y.equals(x)`为true的时候，`x.equals(y)`为true
+3. 传递性：如果`x.equals(y)`和`y.equals(z)`为true，那么`x.equals(z)`为true
+
+另外其必须接收一个Object 为参数，并且满足下面性质：
+
+1. 一致性：当两个对象均未被修改的时候，反复调用`x.equals(y)`总是会返回相同的值
+2. 非空性：`x.equals(null)`总是返回false
+
+##### 如何设计`equals(Object o)`
+
+书中介绍了一种方法，虽然是针对其Date加入的，但是我认为可以在很多情况下复用。思路如下：
+
+1. 看 this 和 o 是否为同一个引用，如果是的话，直接返回true
+2. 看 o 是否为 null，如果是的话，直接返回false
+3. 看 this 和 o 是否为一样的类型，使用`getClass()`方法进行确认，如果不是，直接返回false
+4. 将Object 转换成对应的Class（上一步的判断通过之后一定可转），按项比较其值是否相同。
+
+搞个示例：
+
+```java
+package Code.Cha1Sec2DataAbstract;
+
+public class Counter {
+
+    Integer countTime;
+
+    public boolean equals(Object x) {
+        if (this == x) return true;
+        if (x == null) return false;
+        if (this.getClass() != x.getClass()) return false;
+        //Then can make sure the class is a 'Counter' class and do type convert
+        Counter c = (Counter) x;
+        if(this.countTime != c.countTime) return false;
+        return true;
+    }
+}
+
+```
+
+##### final的局限性
+
+一般来说，对于没有值改变方法的类型，我们使用final修饰，比如Date或者String，其中并没有直接操作值的方法。但是final有一定的局限性，那就是其只能锁定**基本类型**的值，而不能锁定**引用类型**的值。
+
+对于引用类型，其只能锁定这个指针所指向的地址不改变。意味着，**其将永远指向同一个对象，但是所指向的对象的值可以改变**。
+
+在本书之中，final所用来保证的是算法的正确性。比如在二分查找算法之中，如果数据本身是可变的，那么很有可能就会违背了我们”数据是按序排列“这样的默认背景，那也就没办法进行接下来的计算了。
+
+### 1.3 背包，队列和栈
+
+本节目标为：
+
+1. 展示集合之中对象的表现方式可以直接影响各种操作的效率。
+2. 介绍**泛型**和**迭代**。
+3. 介绍并说明**链式结构**的重要性，特别是经典数据结构：链表。
+
+#### 1.3.1.2 自动装箱
+
+类型参数必须被实例化成*引用类型*，
