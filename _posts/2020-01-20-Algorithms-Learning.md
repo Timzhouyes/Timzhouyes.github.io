@@ -181,4 +181,66 @@ public class Counter {
 
 #### 1.3.1.2 自动装箱
 
-类型参数必须被实例化成*引用类型*，
+类型参数必须被实例化成*引用类型*，因此 Java 之中有一种机制使泛型类型可以处理原始类型的参数。
+
+在处理赋值语句，方法的参数和算术或者逻辑表达式的时候，Java会自动在原始类型和引用类型之间进行转换。
+
+```java
+        Stack<Integer> stack = new Stack<>();
+        stack.push(13); //自动装箱
+        int a =stack.pop(); //自动拆箱
+        System.out.println(a);
+```
+
+其中，自动将一个原始数据类型转换成一个封装类型叫做自动封箱，自动将一个封装类型转换成一个原始类型叫自动拆箱。
+
+#### 1.3.2.2 泛型
+
+1. 由于某些历史和技术原因，**直接创建泛型数组是不被允许的**，如果我们想：
+
+   `a = new T[cap]`,我们需要做的是`a = (T[]) new Object[cap]`。
+
+2. 下面这段代码：
+
+   ```java
+   public class FixedLengthStack<T> {
+       private T[] a;
+       private int N;
+       public FixedLengthStack(Integer length){
+           a = (T[]) new Object[length];
+       }
+       public void push(T t){
+           if(a.length==N) throw new IndexOutOfBoundsException("Out of range!");
+           a[N++]=t;
+       }
+       public T pop(){
+           if(a.length==0) throw new NullPointerException("Already no elemet to pop!");
+           return a[--N];
+       }
+   }
+   
+   ```
+
+   可见，代码之中的push和pop两个方法，其对于要操作的“指针” N而言，都是先将指针挪到要使用的位置，之后直接对当前所指的位置进行插入或者取出的操作。
+
+#### 1.3.2.5 迭代
+
+先看下面这段迭代代码：
+
+```java
+public class IteratorExample {
+    public static void main(String[] args) {
+        Stack<String> collection = new Stack<>();
+        Iterator<String> iterator = collection.iterator();
+        while (iterator.hasNext()){
+            String s =iterator.next();
+            System.out.println(s);
+        }                
+    }
+}
+```
+
+在这段代码之中，可以很清楚的看到迭代器所需要的东西：
+
+1. collection 类型必须实现一个`iterator()`方法，并且返回一个 `Iterator`的对象
+2. Iterator 类必须包含两个方法：`boolean hasNext()` 和`T next()`。
