@@ -244,3 +244,169 @@ public class IteratorExample {
 
 1. collection 类型必须实现一个`iterator()`方法，并且返回一个 `Iterator`的对象
 2. Iterator 类必须包含两个方法：`boolean hasNext()` 和`T next()`。
+
+#### 1.3.3.7 链表遍历
+
+相对于数组的遍历，链表的遍历其实原理相同，只是表达方式不同。
+
+其表示方式是`for(Node x= first;x!=null;x=x.next)`
+
+此处的不同在于其不是使用下标界限作为循环退出条件，而是使用“当前元素不为空”这个条件来退出循环。
+
+下面是个人的代码，未implement iterable:
+
+```java
+/**
+ * This class is exercise of "Stack" class.
+ */
+public class StackExercise<T> {
+    private Node first;
+    private int N;
+
+    private class Node {
+        T t;
+        Node next;
+    }
+
+    public boolean isEmpty() {
+        return (N == 0);
+    }
+
+    public int size() {
+        return N;
+    }
+
+    public void push(T t) {
+        Node oldfirst = first;
+        first = new Node();
+        first.t = t;
+        first.next = oldfirst;
+        N++;
+    }
+
+    public T pop() {
+        T oldt = first.t;
+        first = first.next;
+        N--;
+        return oldt;
+    }
+
+}
+```
+
+#### 1.3.3.9 Queue的实现
+
+下面是自己写的Queue的实现：
+
+```java
+public class QueueExercise<T> {
+    private Node first;
+    private Node last;
+    private int N;
+
+    private class Node {
+        T t;
+        Node next;
+    }
+
+    public boolean isEmpty() {
+        return (N == 0);
+    }
+
+    public int size() {
+        return N;
+    }
+
+    public void enqueue(T t) {
+        Node oldlast = last;
+        last = new Node();
+        last.t = t;
+        last.next = null;
+        if (isEmpty()) {
+            first = last;
+        } else {
+            oldlast.next = last;
+        }
+        N++;
+    }
+
+    public T dequeue() {
+        T t = first.t;
+        first = first.next;
+        if (isEmpty()) return null;
+        N--;
+        return t;
+    }
+
+}
+
+```
+
+#### 1.3.3.10 背包的实现（与遍历Iterator的实现和例子）
+
+在下面的例子之中，我使用了自己写的 `ListIterator()`而非默认的。可见如果需要`implement Iterator()`的话，需要在代码之中自己实现一个`iterator()`的方法来返回一个`Iterator<T>`。
+
+`Iterator<T>`需要实现三个方法：`hasNext()`,`remove()`和`next()`。
+
+注意此处的`next()`方法是返回当前指向Node之中的值，而非是下一个值。其是返回值之后再跳转。
+
+下面部分是自己的样例。
+
+```java
+
+/**
+ * This class is exercise of "Stack" class.
+ */
+public class StackExercise<T> implements Iterable<T> {
+    private Node first;
+    private int N;
+
+    private class Node {
+        T t;
+        Node next;
+    }
+
+    public boolean isEmpty() {
+        return (N == 0);
+    }
+
+    public int size() {
+        return N;
+    }
+
+    public void push(T t) {
+        Node oldfirst = first;
+        first = new Node();
+        first.t = t;
+        first.next = oldfirst;
+        N++;
+    }
+
+    public T pop() {
+        T oldt = first.t;
+        first = first.next;
+        N--;
+        return oldt;
+    }
+
+    public Iterator<T> iterator() {
+        return new ListIterator();
+    }
+
+    private class ListIterator implements Iterator<T> {
+        private Node current = first;
+
+        public boolean hasNext() {
+            return (current.next != null);
+        }
+
+        public T next() {
+            T t = current.t; //Here returning value is the value "now". Not next.
+            current = current.next;
+            return t;
+        }
+    }
+}
+
+```
+
