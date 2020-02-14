@@ -437,7 +437,7 @@ public class StackExercise<T> implements Iterable<T> {
 
 在生产的过程之中，详细分析之后得到的公式可能比较复杂。一个 ThreeSum 的式子所需要的时间复杂度是:
 
-$C^3_N$
+<a href="https://www.codecogs.com/eqnedit.php?latex=C_{N}^{3}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?C_{N}^{3}" title="C_{N}^{3}" /></a>
 
 那么将其展开之后，我们得到的就是`N(N-1)(N-2)`，将其展开之后我们会得到一个多项式。
 
@@ -447,9 +447,9 @@ $C^3_N$
 
 > 定义：我们用 `~f(N)`表示所有随着N的增大除以 `f(N)`的结果趋近于1的函数。我们用`g(N)~f(N)`表示 `g(N)/f(N)`随着N的增大趋近于1
 
-例如，我们使用 ~<a href="https://www.codecogs.com/eqnedit.php?latex=N^{3}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?N^{3}" title="N^{3}" /></a>/6 来表示 ThreeSum 之中的 if 语句的执行次数，因为式子的结果随着N的增大而趋近于1。
+例如，我们使用 ~(N^3)/6 来表示 ThreeSum 之中的 if 语句的执行次数，因为式子的结果随着N的增大而趋近于1。
 
-一般而言，我们用到的近似方式都是 g(N)~af(N)，其中f(N)=<a href="https://www.codecogs.com/eqnedit.php?latex=N^{b}(logN)^{c}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?N^{b}(logN)^{c}" title="N^{b}(logN)^{c}" /></a>，a,b,c均为常数。我们称 f(N)为 g(N) 的**增长的数量级**。
+一般而言，我们用到的近似方式都是 g(N)~af(N)，其中<a href="https://www.codecogs.com/eqnedit.php?latex=N^{b}(logN)^{c}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(N)=N^{b}(logN)^{c}" title="N^{b}(logN)^{c}" /></a>，a,b,c均为常数。我们称 f(N)为 g(N) 的**增长的数量级**。
 
 我们一般不会指定底数，因为常数a可以弥补这些细节。这种形式的函数覆盖了我们在对程序运行时间的研究之中经常遇到的几种函数（除了指数级别之外），如下表所示：
 
