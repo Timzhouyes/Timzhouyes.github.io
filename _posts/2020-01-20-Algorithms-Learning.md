@@ -449,7 +449,7 @@ public class StackExercise<T> implements Iterable<T> {
 
 例如，我们使用 ~(N^3)/6 来表示 ThreeSum 之中的 if 语句的执行次数，因为式子的结果随着N的增大而趋近于1。
 
-一般而言，我们用到的近似方式都是 g(N)~af(N)，其中<a href="https://www.codecogs.com/eqnedit.php?latex=N^{b}(logN)^{c}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(N)=N^{b}(logN)^{c}" title="N^{b}(logN)^{c}" /></a>，a,b,c均为常数。我们称 f(N)为 g(N) 的**增长的数量级**。
+一般而言，我们用到的近似方式都是 g(N)~af(N)，其中<a href="https://www.codecogs.com/eqnedit.php?latex=N^{b}(logN)^{c}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(N)=N^{b}(logN)^{c}" title="N^{b}(logN)^{c}" /></a> 其中a,b,c均为常数。我们称 f(N)为 g(N) 的**增长的数量级**。
 
 我们一般不会指定底数，因为常数a可以弥补这些细节。这种形式的函数覆盖了我们在对程序运行时间的研究之中经常遇到的几种函数（除了指数级别之外），如下表所示：
 
