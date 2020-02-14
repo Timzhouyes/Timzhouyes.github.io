@@ -460,9 +460,9 @@ $C^3_N$
 | 对数级别     | logN                                                         |
 | 线性级别     | N                                                            |
 | 线性对数级别 | NlogN                                                        |
-| 平方级别     | <a href="https://www.codecogs.com/eqnedit.php?latex=N^{2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?N^{2}" title="N^{2}" /></a> |
-| 立方级别     | <a href="https://www.codecogs.com/eqnedit.php?latex=N^{3}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?N^{3}" title="N^{3}" /></a> |
-| 指数级别     | <a href="https://www.codecogs.com/eqnedit.php?latex=2^{N}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{N}" title="2^{N}" /></a> |
+| 平方级别     | <img src="https://latex.codecogs.com/gif.latex?N^{2}" title="N^{2}" /> |
+| 立方级别     | <img src="https://latex.codecogs.com/gif.latex?N^{3}" title="N^{3}" /> |
+| 指数级别     | <img src="https://latex.codecogs.com/gif.latex?2^{N}" title="2^{N}" /> |
 
 
 
