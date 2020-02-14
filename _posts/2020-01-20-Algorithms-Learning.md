@@ -454,15 +454,15 @@ public class StackExercise<T> implements Iterable<T> {
 我们一般不会指定底数，因为常数a可以弥补这些细节。这种形式的函数覆盖了我们在对程序运行时间的研究之中经常遇到的几种函数（除了指数级别之外），如下表所示：
 
 <center>增长的数量级</center>
-| 描述         | 函数                                                         |
-| ------------ | ------------------------------------------------------------ |
-| 常数级别     | 1                                                            |
-| 对数级别     | logN                                                         |
-| 线性级别     | N                                                            |
-| 线性对数级别 | NlogN                                                        |
-| 平方级别     | <img src="https://latex.codecogs.com/gif.latex?N^{2}" title="N^{2}" /> |
-| 立方级别     | <img src="https://latex.codecogs.com/gif.latex?N^{3}" title="N^{3}" /> |
-| 指数级别     | <img src="https://latex.codecogs.com/gif.latex?2^{N}" title="2^{N}" /> |
+| 描述         | 函数  |
+| ------------ | ----- |
+| 常数级别     | 1     |
+| 对数级别     | logN  |
+| 线性级别     | N     |
+| 线性对数级别 | NlogN |
+| 平方级别     | N^2   |
+| 立方级别     | N^3   |
+| 指数级别     | 2^N   |
 
 
 
