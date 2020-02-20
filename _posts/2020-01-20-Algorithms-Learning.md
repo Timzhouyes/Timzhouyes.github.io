@@ -558,4 +558,5 @@ public class StackExercise<T> implements Iterable<T> {
 
 #### 1.4.9.3 数组
 
-在Java之中，数组被实现为对象，
+在Java之中，数组被实现为对象，其一般都会
+
