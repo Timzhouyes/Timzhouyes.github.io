@@ -558,5 +558,46 @@ public class StackExercise<T> implements Iterable<T> {
 
 #### 1.4.9.3 数组
 
-在Java之中，数组被实现为对象，其一般都会
+在Java之中，数组被实现为对象，其一般都会由于需要记录长度而产生额外的内存消耗。一个原始类型的数组一般需要24字节的头信息（其中16字节是其本身对象的开销，剩下的4字节是一个Integer，还有4字节作为填充），再加上其内部数据所需的内存。
 
+例如，一个含有N个int值的数组就需要(24+4*N)的字节，一个含有N个double值的内存需要使用(24+8\*N)个字节。
+
+一个对象的数组就是其**对象的引用**的数组，所以我们需要在对象所需的内存之外再加上其引用所需要的内存。
+
+以M*N的double类型的二元数组为例，首先整个数组需要24字节的开销，然后对其中的M个数组，我们有(24\*M)的对象开销和(8\*M)的引用开销。再将目光转到数组内部，对所有的对象，有(8\*M\*N)的对象内容开销。所以一共开销是:
+
+24+24\*M+8\*M+8\*M\*N ~ 8MN 个字节的开销。
+
+#### 1.4.9.4 字符串对象
+
+Java的String所使用的内存的标准实现有四个实例变量：
+
+1. 一个指向字符数组的引用：8字节
+
+2. 一个 int 值表示字符数组之中的偏移量： offset
+
+   > 此处一开始我个人有一些疑惑，认为其在String这个类之中不是必要的。在看完源码之后其实也觉得其不是必要的。这个offset 主要是对创建子字符串有很大的帮助，其指代的也就是子字符串的开头。下面是原始代码：
+   >
+   > ```java
+   > public String(char value[], int offset, int count) {
+   >         if (offset < 0) {
+   >             throw new StringIndexOutOfBoundsException(offset);
+   >         }
+   >         if (count <= 0) {
+   >             if (count < 0) {
+   >                 throw new StringIndexOutOfBoundsException(count);
+   >             }
+   >             if (offset <= value.length) {
+   >                 this.value = "".value;
+   >                 return;
+   >             }
+   >         }
+   >         // Note: offset or count might be near -1>>>1.
+   >         if (offset > value.length - count) {
+   >             throw new StringIndexOutOfBoundsException(offset + count);
+   >         }
+   >         this.value = Arrays.copyOfRange(value, offset, offset+count);
+   >     }
+   > ```
+
+3. 
