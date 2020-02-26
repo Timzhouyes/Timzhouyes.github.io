@@ -387,4 +387,218 @@ class之中没有公共的constructor，代替的，Class 对象是被Java VM �
       private volatile transient Class<?>       newInstanceCallerCache;
       ```
 
-      
+      如果 cacheConstructor 为空，那么先检查是否实例化 Class 类本身，是的话抛出异常。不是的话先做一个空类，然后试着调用`getConstructor0`这个方法（按照命名规律来看猜测是一个native 方法），并且在方法之中`setAccessible(true)`，这也对应了我们前面的”如果没有 `SecurityManager`这个对象，那么不去检查其是否可以被 access。
+
+      在这之后，会检查 modifiers ，如果调用`quickCheckMemberAccess(this, modifiers)` 之后发现结果是false，那么会直接生成一个 caller，这个caller如果和`newInstanceCallerCache`不同，那么先使用
+
+      `Reflection.ensureMemberAccess(caller, this, null, modifiers);`
+
+      之后将caller赋给`newInstanceCallerCache`。最后由 constructor 创建 newInstance。
+
+8. `    public native boolean isInstance(Object obj);`
+
+      其原理是检查obj非空，而且在Cast到相应的Class过程之中不发生`ClassCastException`，否则返回false。
+
+      其检查结果很有趣，在注释之中有特殊说明：
+
+      - 如果检验的是已经声明的类，那么当其为该类或者其子类的时候返回true
+
+      - 如果检验的是array，那么其可以转换或者widening reference conversion 成 array的时候返回true
+
+        > A *widening reference conversion* exists from any reference type S to any reference type T, provided S is a subtype of T
+
+      - 如果其是一个interface ,那么当参数的类型或者superclass 可以 implement 当前的 interface 时候会返回true
+
+      - 如果其是一个基本类型，直接返回false。
+
+      ```java
+         /**
+           * Determines if the specified {@code Object} is assignment-compatible
+           * with the object represented by this {@code Class}.  This method is
+           * the dynamic equivalent of the Java language {@code instanceof}
+           * operator. The method returns {@code true} if the specified
+           * {@code Object} argument is non-null and can be cast to the
+           * reference type represented by this {@code Class} object without
+           * raising a {@code ClassCastException.} It returns {@code false}
+           * otherwise.
+           *
+           * <p> Specifically, if this {@code Class} object represents a
+           * declared class, this method returns {@code true} if the specified
+           * {@code Object} argument is an instance of the represented class (or
+           * of any of its subclasses); it returns {@code false} otherwise. If
+           * this {@code Class} object represents an array class, this method
+           * returns {@code true} if the specified {@code Object} argument
+           * can be converted to an object of the array class by an identity
+           * conversion or by a widening reference conversion; it returns
+           * {@code false} otherwise. If this {@code Class} object
+           * represents an interface, this method returns {@code true} if the
+           * class or any superclass of the specified {@code Object} argument
+           * implements this interface; it returns {@code false} otherwise. If
+           * this {@code Class} object represents a primitive type, this method
+           * returns {@code false}.
+           *
+           * @param   obj the object to check
+           * @return  true if {@code obj} is an instance of this class
+           *
+           * @since JDK1.1
+           */
+          public native boolean isInstance(Object obj);
+      ```
+
+9. `public native boolean isAssignableFrom(Class<?> cls);`
+
+      `Class1.isAssignableFrom(class2);`当class1是 class2的父类或者同类的时候返回true，不然返回false。
+
+      其实际操作是检查其可否直接转换，或者通过widening reference conversion 转换过去。
+
+      ```java
+          /**
+           * Determines if the class or interface represented by this
+           * {@code Class} object is either the same as, or is a superclass or
+           * superinterface of, the class or interface represented by the specified
+           * {@code Class} parameter. It returns {@code true} if so;
+           * otherwise it returns {@code false}. If this {@code Class}
+           * object represents a primitive type, this method returns
+           * {@code true} if the specified {@code Class} parameter is
+           * exactly this {@code Class} object; otherwise it returns
+           * {@code false}.
+           *
+           * <p> Specifically, this method tests whether the type represented by the
+           * specified {@code Class} parameter can be converted to the type
+           * represented by this {@code Class} object via an identity conversion
+           * or via a widening reference conversion. See <em>The Java Language
+           * Specification</em>, sections 5.1.1 and 5.1.4 , for details.
+           *
+           * @param cls the {@code Class} object to be checked
+           * @return the {@code boolean} value indicating whether objects of the
+           * type {@code cls} can be assigned to objects of this class
+           * @exception NullPointerException if the specified Class parameter is
+           *            null.
+           * @since JDK1.1
+           */
+          public native boolean isAssignableFrom(Class<?> cls);
+      ```
+
+10. `public native boolean isPrimitive();`
+
+       检查其是否是基本类型。此处可以返回 true 的有九种类型，null 和以下八种：
+
+       ```java
+       * @see     java.lang.Boolean#TYPE
+       * @see     java.lang.Character#TYPE
+       * @see     java.lang.Byte#TYPE
+       * @see     java.lang.Short#TYPE
+       * @see     java.lang.Integer#TYPE
+       * @see     java.lang.Long#TYPE
+       * @see     java.lang.Float#TYPE
+       * @see     java.lang.Double#TYPE
+       * @see     java.lang.Void#TYPE
+       ```
+
+       下面这句会返回true：
+
+       ```java
+               System.out.println(int.class.isPrimitive());
+       ```
+
+       源代码：
+
+       ```java
+        /**
+            * Determines if the specified {@code Class} object represents a
+            * primitive type.
+            *
+            * <p> There are nine predefined {@code Class} objects to represent
+            * the eight primitive types and void.  These are created by the Java
+            * Virtual Machine, and have the same names as the primitive types that
+            * they represent, namely {@code boolean}, {@code byte},
+            * {@code char}, {@code short}, {@code int},
+            * {@code long}, {@code float}, and {@code double}.
+            *
+            * <p> These objects may only be accessed via the following public static
+            * final variables, and are the only {@code Class} objects for which
+            * this method returns {@code true}.
+            *
+            * @return true if and only if this class represents a primitive type
+            *
+            * @see     java.lang.Boolean#TYPE
+            * @see     java.lang.Character#TYPE
+            * @see     java.lang.Byte#TYPE
+            * @see     java.lang.Short#TYPE
+            * @see     java.lang.Integer#TYPE
+            * @see     java.lang.Long#TYPE
+            * @see     java.lang.Float#TYPE
+            * @see     java.lang.Double#TYPE
+            * @see     java.lang.Void#TYPE
+            * @since JDK1.1
+            */
+           public native boolean isPrimitive();
+       ```
+
+11. `public boolean isAnnotation()`
+
+       检验其是否为Annotation，注意，如果`isAnnotation`返回true，那么`isInterface`也返回true，因为 所有的 annotation 类型也是 interface。
+
+       其实现就是用到了之前的那个`    private static final int ANNOTATION= 0x00002000;`和Boolean之中的判断异曲同工。
+
+       ```java
+       /**
+            * Returns true if this {@code Class} object represents an annotation
+            * type.  Note that if this method returns true, {@link #isInterface()}
+            * would also return true, as all annotation types are also interfaces.
+            *
+            * @return {@code true} if this class object represents an annotation
+            *      type; {@code false} otherwise
+            * @since 1.5
+            */
+           public boolean isAnnotation() {
+               return (getModifiers() & ANNOTATION) != 0;
+           }
+       ```
+
+12. `public String getName()`
+
+       其就是直接返回该类的名字，但是在某些情况下要单独分析：
+
+       ```java
+       * <p> If this class object represents a class of arrays, then the internal
+            * form of the name consists of the name of the element type preceded by
+            * one or more '{@code [}' characters representing the depth of the array
+            * nesting.  The encoding of element type names is as follows:
+            *
+            * <blockquote><table summary="Element types and encodings">
+            * <tr><th> Element Type <th> &nbsp;&nbsp;&nbsp; <th> Encoding
+            * <tr><td> boolean      <td> &nbsp;&nbsp;&nbsp; <td align=center> Z
+            * <tr><td> byte         <td> &nbsp;&nbsp;&nbsp; <td align=center> B
+            * <tr><td> char         <td> &nbsp;&nbsp;&nbsp; <td align=center> C
+            * <tr><td> class or interface
+            *                       <td> &nbsp;&nbsp;&nbsp; <td align=center> L<i>classname</i>;
+            * <tr><td> double       <td> &nbsp;&nbsp;&nbsp; <td align=center> D
+            * <tr><td> float        <td> &nbsp;&nbsp;&nbsp; <td align=center> F
+            * <tr><td> int          <td> &nbsp;&nbsp;&nbsp; <td align=center> I
+            * <tr><td> long         <td> &nbsp;&nbsp;&nbsp; <td align=center> J
+            * <tr><td> short        <td> &nbsp;&nbsp;&nbsp; <td align=center> S
+            * </table></blockquote>
+       ```
+
+       如果是这些的数组对象（例如 int[]），那么其在输出的时候会使用后面的缩写（比如 `I[` )。void 的 getName 还是 void，但是 Integer[] 的输出会是 `[Ljava.lang.Integer` 其他的示例输出在下面：
+
+       ```java
+            * <p> Examples:
+            * <blockquote><pre>
+            * String.class.getName()
+            *     returns "java.lang.String"
+            * byte.class.getName()
+            *     returns "byte"
+            * (new Object[3]).getClass().getName()
+            *     returns "[Ljava.lang.Object;"
+            * (new int[3][4][5][6][7][8][9]).getClass().getName()
+            *     returns "[[[[[[[I"
+            * </pre></blockquote>
+       
+       ```
+
+       
+
+       
+
