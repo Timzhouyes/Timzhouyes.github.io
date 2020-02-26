@@ -72,135 +72,29 @@ public final class Class<T> implements java.io.Serializable,
                               AnnotatedElement 
 ```
 
+首先，第一段举例了在Java之中的所有class和interface都是class，哪怕是基本类型，例如bool等等也是class。
 
+class之中没有公共的constructor，代替的，Class 对象是被Java VM 自动建立的。
 
 # 内部对象
 
 ```java
-  private static final long serialVersionUID = 3206093459760846163L;
-	private static ProtectionDomain AllPermissionsPD;
-	private static final int SYNTHETIC = 0x1000;
-	private static final int ANNOTATION = 0x2000;
-	private static final int ENUM = 0x4000;
-	private static final int MEMBER_INVALID_TYPE = -1;
+    private static final int ANNOTATION= 0x00002000;
+    private static final int ENUM      = 0x00004000;
+    private static final int SYNTHETIC = 0x00001000;
 
-	static final Class<?>[] EmptyParameters = new Class<?>[0];
-	
-	private transient long vmRef;
-	private transient ClassLoader classLoader;
-
-	private transient ProtectionDomain protectionDomain;
-	private transient String classNameString;
-
-	private static final class AnnotationVars {
-		AnnotationVars() {}
-		static long annotationTypeOffset = -1;
-		static long valueMethodOffset = -1;
-
-		volatile AnnotationType annotationType;
-		MethodHandle valueMethod;
-	}
-	private transient AnnotationVars annotationVars;
-	private static long annotationVarsOffset = -1;
-
-	transient ClassValue.ClassValueMap classValueMap;
-
-	private static final class EnumVars<T> {
-		EnumVars() {}
-		static long enumDirOffset = -1;
-		static long enumConstantsOffset = -1;
-
-		Map<String, T> cachedEnumConstantDirectory;
-		T[] cachedEnumConstants;
-	}
-	private transient EnumVars<T> enumVars;
-	private static long enumVarsOffset = -1;
-	
-	transient J9VMInternals.ClassInitializationLock initializationLock;
-	
-	private transient Object methodHandleCache;
-	
-	private transient ClassRepositoryHolder classRepoHolder;
+    private static native void registerNatives();
+    static {
+        registerNatives();
+    }
 ```
 
-下面分点讲：
+可以显然看出其是下面判定之中所需要的static 值，下面在具体使用的时候会解释。而这些值的判定方式也是和其他一样，每一个都是之前的2倍，符合二进制的值分配规则。
 
-1. `serialVersionUID` ：其用来标记当前对象的版本。在序列化和反序列化之中，我们有可能在接收和输出的两台机器上面的类型版本不同，那么这种情况序列化和反序列化就可能出现问题。如何应对这种情况？就是每次改动之后修改这个`serialVersionUID`，这样的话在接收端就可以发现这个对象和自己的版本不同。当然，有时候是需要将修改兼容此对象，那么就在修改之后的版本之中保持其值不变。
+下面这个`registerNatives()`方法前面有 native 修饰，而且其中没有任何代码块，这意味着其为一个 jvm 层面的问题，其只是相当于声明了一个 jvm 对外界暴露的接口。同时，下面这种用static 将其包裹的形式，作用为将其执行。如果没有这个static包裹，那么其只是会被声明而不会被执行。
 
 # 方法
 
-1. 默认构造方法：
+1. 构造方法：
 
-   ```java
-   **
-    * Prevents this class from being instantiated. Instances
-    * created by the virtual machine only.
-    */
-   private Class() {}
-   ```
-
-   可以看到其直接将默认构造方法置空。在备注之中也提到了，这种情况是防止这个类被实例化。实例只可以在vm之中被创建。
-
-2. `checkMemberAccess`:
-
-   ```java
-   /*
-    * Ensure the caller has the requested type of access.
-    * 
-    * @param		security			the current SecurityManager
-    * @param		callerClassLoader	the ClassLoader of the caller of the original protected API
-    * @param		type				type of access, PUBLIC, DECLARED or INVALID
-    * 
-    */
-   void checkMemberAccess(SecurityManager security, ClassLoader callerClassLoader, int type) {
-   	if (callerClassLoader != ClassLoader.bootstrapClassLoader) {
-   		ClassLoader loader = getClassLoaderImpl();
-   		if (type == Member.DECLARED && callerClassLoader != loader) {
-   			security.checkPermission(com.ibm.oti.util.RuntimePermissions.permissionAccessDeclaredMembers);
-   		}
-   		if (sun.reflect.misc.ReflectUtil.needsPackageAccessCheck(callerClassLoader, loader)) {	
-   			if (Proxy.isProxyClass(this)) {
-   				sun.reflect.misc.ReflectUtil.checkProxyPackageAccess(callerClassLoader, this.getInterfaces());
-   			} else {
-   				String packageName = this.getPackageName();
-   				if ((packageName != null) && (packageName != "")) { //$NON-NLS-1$
-   					security.checkPackageAccess(packageName);
-   				}
-   			}
-   		}
-   	}
-   }
-   ```
-
-   可见其作用是检查当前线程是否有权限访问该对象。默认的情况，是允许访问`PUBLIC`类型的对象和相同`ClassLoader` 的调用者类。
-
-3. `checkNonSunProxyMemberAccess`:
-
-   ```java
-   /**
-    * Ensure the caller has the requested type of access.
-    * 
-    * This helper method is only called by getClasses, and skip security.checkPackageAccess()
-    * when the class is a ProxyClass and the package name is sun.proxy.
-    *
-    * @param		type			type of access, PUBLIC or DECLARED
-    * 
-    */
-   private void checkNonSunProxyMemberAccess(SecurityManager security, ClassLoader callerClassLoader, int type) {
-   	if (callerClassLoader != ClassLoader.bootstrapClassLoader) {
-   		ClassLoader loader = getClassLoaderImpl();
-   		if (type == Member.DECLARED && callerClassLoader != loader) {
-   			security.checkPermission(com.ibm.oti.util.RuntimePermissions.permissionAccessDeclaredMembers);
-   		}
-   		String packageName = this.getPackageName();
-   		if (!(Proxy.isProxyClass(this) && packageName.equals(sun.reflect.misc.ReflectUtil.PROXY_PACKAGE)) &&
-   				packageName != null && packageName != "" && sun.reflect.misc.ReflectUtil.needsPackageAccessCheck(callerClassLoader, loader)) //$NON-NLS-1$	
-   		{
-   			security.checkPackageAccess(packageName);
-   		}
-   	}
-   }
-   ```
-
-   确定这个caller
-
+   前面讲了，
