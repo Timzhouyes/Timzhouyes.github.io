@@ -598,7 +598,20 @@ class之中没有公共的constructor，代替的，Class 对象是被Java VM �
        
        ```
 
-       
+13. `private native String getName0();`
+
+       这里还有另外的一个私有变量定义：
+
+       `private transient String name;`
+
+       其有一个注释是下面这句：
+
+       > ```
+       > // cache the name to reduce the number of calls into the VM
+       > ```
+
+       其意义就是将名字缓存在此处，避免较多的进入VM拿数据的消耗
+
+       命名规则是和之前的一样，使用 native 修饰，并且后缀带有0， 那么就是 JVM 的方法。
 
        
-
