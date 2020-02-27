@@ -220,3 +220,331 @@ C:\Program Files\Java\jre1.8.0_91\classes
 
 ## AppClassLoader 源码
 
+```java
+/**
+     * The class loader used for loading from java.class.path.
+     * runs in a restricted security context.
+     */
+    static class AppClassLoader extends URLClassLoader {
+
+
+        public static ClassLoader getAppClassLoader(final ClassLoader extcl)
+            throws IOException
+        {
+            final String s = System.getProperty("java.class.path");
+            final File[] path = (s == null) ? new File[0] : getClassPath(s);
+
+     
+            return AccessController.doPrivileged(
+                new PrivilegedAction<AppClassLoader>() {
+                    public AppClassLoader run() {
+                    URL[] urls =
+                        (s == null) ? new URL[0] : pathToURLs(path);
+                    return new AppClassLoader(urls, extcl);
+                }
+            });
+        }
+
+        ......
+    }
+
+```
+
+同样的，这段代码也是在保证权限的前提之下从 `java.class.path` 之中加载相应的代码，如法炮制打印其内容：
+
+`System.out.println(System.getProperty("java.class.path"));`
+
+可以得到值为：
+
+`D:\workspace\ClassLoaderDemo\bin`
+
+这个路径实际就是当前 java 的工程目录 bin，里面存放的是编译生成的 class 文件。
+
+到现在我们知道了，BootstrapClassLoader、ExtClassLoader、AppClassLoader 三者是查阅相应的环境属性
+
+`sun.boot.class.path`、`java.ext.dirs`和`java.class.path` 来实现其功能的。
+
+**下面我们来做一个测试：**
+
+首先新建一个项目，之后在其中放两个类：
+
+`Test.java`:
+
+```java
+public class Test{}
+```
+
+`ClassLoaderTest.java`:
+
+```java
+package JavaSourceCodeStudy;
+
+public class ClassLoaderLearning {
+    public static void main(String[] args) {
+        ClassLoader classLoader = Test.class.getClassLoader();
+        System.out.println("ClassLoader for our own class is "+ classLoader.toString());
+
+        classLoader = int.class.getClassLoader();
+        System.out.println("ClassLoader for primary type is "+classLoader.toString());
+
+    }
+}
+
+```
+
+其结果为：
+
+```java
+ClassLoader for our own class is sun.misc.Launcher$AppClassLoader@659e0bfd
+Exception in thread "main" java.lang.NullPointerException
+	at JavaSourceCodeStudy.ClassLoaderLearning.main(ClassLoaderLearning.java:9)
+```
+
+那么，我们获取到了自己编写的 `Test.class`类是由 AppClassLoader 加载的。但是此处在我们想要获取 String 的 ClassLoader 的时候报错了，提示 NPE。这指的是这些类不需要 ClassLoader 加载？
+
+不是，而是类似于 int 这种 class 是由 Bootstrap ClassLoader 加载的。
+
+首先我们要明白一个前提，那就是**每一个 ClassLoader 都有一个父 ClassLoader**。
+
+比如在我们自己编写的 Test.class 就是由 AppClassLoader 加载，那么 AppClassLoader 也会有一个父加载器，可以通过 `getParent()` 这个方法获得。比如代码可以这样写：
+
+```java
+package JavaSourceCodeStudy;
+
+public class ClassLoaderLearning {
+    public static void main(String[] args) {
+        ClassLoader classLoader = Test.class.getClassLoader();
+        System.out.println("ClassLoader for our own class is "+ classLoader.toString());
+        System.out.println("ClassLoader\'s parent is "+classLoader.getParent().toString());
+    }
+}
+
+```
+
+其输出为：
+
+```java
+ClassLoader for our own class is sun.misc.Launcher$AppClassLoader@659e0bfd
+ClassLoader's parent is sun.misc.Launcher$ExtClassLoader@6d06d69c
+```
+
+其说明 AppClassLoader 的父 ClassLoader 是 ExtClassLoader，那么ExtClassLoader 的父加载器是谁呢？
+
+我们在代码之中加入这一行：
+
+```java
+System.out.println("ClassLoader\'s grand father is:"+classLoader.getParent().getParent().toString());
+
+```
+
+结果又会出现 NPE。这说明 ExtClassLoader 也有没有父加载器。这不是和我们之前提到的那一点矛盾吗？
+
+我们先理解下面的一个基础前提：
+
+**父加载器不是父类**
+
+之前我们已经粘贴了 ExtClassLoader 和 AppClassLoader 的代码：
+
+```java
+static class ExtClassLoader extends URLClassLoader {}
+static class AppClassLoader extends URLClassLoader {}
+```
+
+那么为什么调用`AppClassLoader` 的 `getParent()` 代码会得到 `ExtClassLoader` 而不是 `URLClassLoader` 呢？
+
+![这里写图片描述](/img/format,png.png)
+
+先上一个图。
+
+`URLClassLoader` 之中并没有 `getParent()` 方法，其在 `ClassLoader.java` 之中。
+
+```java
+public abstract class ClassLoader {
+
+// The parent class loader for delegation
+// Note: VM hardcoded the offset of this field, thus all new fields
+// must be added *after* it.
+private final ClassLoader parent;
+// The class loader for the system
+    // @GuardedBy("ClassLoader.class")
+private static ClassLoader scl;
+
+private ClassLoader(Void unused, ClassLoader parent) {
+    this.parent = parent;
+    ...
+}
+protected ClassLoader(ClassLoader parent) {
+    this(checkCreateClassLoader(), parent);
+}
+protected ClassLoader() {
+    this(checkCreateClassLoader(), getSystemClassLoader());
+}
+public final ClassLoader getParent() {
+    if (parent == null)
+        return null;
+    return parent;
+}
+public static ClassLoader getSystemClassLoader() {
+    initSystemClassLoader();
+    if (scl == null) {
+        return null;
+    }
+    return scl;
+}
+
+private static synchronized void initSystemClassLoader() {
+    if (!sclSet) {
+        if (scl != null)
+            throw new IllegalStateException("recursive invocation");
+        sun.misc.Launcher l = sun.misc.Launcher.getLauncher();
+        if (l != null) {
+            Throwable oops = null;
+            //通过Launcher获取ClassLoader
+            scl = l.getClassLoader();
+            try {
+                scl = AccessController.doPrivileged(
+                    new SystemClassLoaderAction(scl));
+            } catch (PrivilegedActionException pae) {
+                oops = pae.getCause();
+                if (oops instanceof InvocationTargetException) {
+                    oops = oops.getCause();
+                }
+            }
+            if (oops != null) {
+                if (oops instanceof Error) {
+                    throw (Error) oops;
+                } else {
+                    // wrap the exception
+                    throw new Error(oops);
+                }
+            }
+        }
+        sclSet = true;
+    }
+}
+}
+
+```
+
+我们可以看到getParent()实际上返回的就是一个ClassLoader对象parent，parent的赋值是在ClassLoader对象的构造方法中，它有两个情况：
+
+1. 由外部类创建ClassLoader时直接指定一个ClassLoader为parent。
+
+2. 由getSystemClassLoader()方法生成，也就是在sun.misc.Laucher通过getClassLoader()获取，也就是AppClassLoader。直白的说，一个ClassLoader创建时如果没有指定parent，那么它的parent默认就是AppClassLoader。
+
+我们主要研究的是ExtClassLoader与AppClassLoader的parent的来源，正好它们与Launcher类有关，我们上面已经粘贴过Launcher的部分代码。
+```java
+public class Launcher {
+    private static URLStreamHandlerFactory factory = new Factory();
+    private static Launcher launcher = new Launcher();
+    private static String bootClassPath =
+        System.getProperty("sun.boot.class.path");
+
+    public static Launcher getLauncher() {
+        return launcher;
+    }
+    
+    private ClassLoader loader;
+    
+    public Launcher() {
+        // Create the extension class loader
+        ClassLoader extcl;
+        try {
+            extcl = ExtClassLoader.getExtClassLoader();
+        } catch (IOException e) {
+            throw new InternalError(
+                "Could not create extension class loader", e);
+        }
+    
+        // Now create the class loader to use to launch the application
+        try {
+        //将ExtClassLoader对象实例传递进去
+            loader = AppClassLoader.getAppClassLoader(extcl);
+        } catch (IOException e) {
+            throw new InternalError(
+                "Could not create application class loader", e);
+        }
+
+public ClassLoader getClassLoader() {
+        return loader;
+    }
+static class ExtClassLoader extends URLClassLoader {
+
+        /**
+         * create an ExtClassLoader. The ExtClassLoader is created
+         * within a context that limits which files it can read
+         */
+        public static ExtClassLoader getExtClassLoader() throws IOException
+        {
+            final File[] dirs = getExtDirs();
+    
+            try {
+                // Prior implementations of this doPrivileged() block supplied
+                // aa synthesized ACC via a call to the private method
+                // ExtClassLoader.getContext().
+    
+                return AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<ExtClassLoader>() {
+                        public ExtClassLoader run() throws IOException {
+                            //ExtClassLoader在这里创建
+                            return new ExtClassLoader(dirs);
+                        }
+                    });
+            } catch (java.security.PrivilegedActionException e) {
+                throw (IOException) e.getException();
+            }
+        }
+
+
+        /*
+         * Creates a new ExtClassLoader for the specified directories.
+         */
+        public ExtClassLoader(File[] dirs) throws IOException {
+            super(getExtURLs(dirs), null, factory);
+           
+        }
+        }
+```
+我们需要注意的是
+
+```java
+ClassLoader extcl;
+        
+extcl = ExtClassLoader.getExtClassLoader();
+
+loader = AppClassLoader.getAppClassLoader(extcl);
+```
+
+代码已经说明了问题AppClassLoader的parent是一个ExtClassLoader实例。
+
+ExtClassLoader并没有直接找到对parent的赋值。它调用了它的父类也就是URLClassLoder的构造方法并传递了3个参数。
+
+```java
+public ExtClassLoader(File[] dirs) throws IOException {
+            super(getExtURLs(dirs), null, factory);   
+}
+```
+
+
+对应的代码
+
+```java
+public  URLClassLoader(URL[] urls, ClassLoader parent,
+                          URLStreamHandlerFactory factory) {
+     super(parent);
+}
+```
+
+
+答案已经很明了了，ExtClassLoader的parent为null。
+
+上面张贴这么多代码也是为了说明AppClassLoader的parent是ExtClassLoader，ExtClassLoader的parent是null。这符合我们之前编写的测试代码。
+
+不过，我们只看到ExtClassLoader和AppClassLoader的创建，那么BootstrapClassLoader呢？
+
+还有，ExtClassLoader的父加载器为null,但是Bootstrap CLassLoader却可以当成它的父加载器这又是为何呢？
+
+我们继续往下进行。
+
+**Bootstrap ClassLoader是由C++编写的。**
+Bootstrap ClassLoader是由C/C++编写的，它本身是虚拟机的一部分，所以它并不是一个JAVA类，也就是无法在java代码中获取它的引用，JVM启动时通过Bootstrap类加载器加载rt.jar等核心jar包中的class文件，之前的int.class,String.class都是由它加载。然后呢，我们前面已经分析了，JVM初始化sun.misc.Launcher并创建Extension ClassLoader和AppClassLoader实例。并将ExtClassLoader设置为AppClassLoader的父加载器。Bootstrap没有父加载器，但是它却可以作用一个ClassLoader的父加载器。比如ExtClassLoader。这也可以解释之前通过ExtClassLoader的getParent方法获取为Null的现象。
