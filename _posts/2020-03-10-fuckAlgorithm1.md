@@ -43,3 +43,75 @@ https://github.com/labuladong/fucking-algorithm
 
 ## 二、数据结构的基本操作
 
+作者将整个数据结构的操作分为两个方面进行描述：线性/非线性，递归/遍历。
+
+对于任何的数据结构，其基本操作都是CRUD，也就是遍历+ 访问。
+
+那么遍历+访问的方式就是分为两种：线性的和非线性的。
+
+线性的就是以 for while 为代表，而非线性就是以递归为代表。下面几种框架是具体的形式：
+
+数组遍历框架，线性迭代：
+
+```java
+ void traverse(int[] arr){
+        for(int i =0;i<arr.length;i++){
+            //Iterate visit arr
+        }
+    }
+```
+
+链表遍历框架，兼具迭代和递归结构，下面代码之中将二者都提供：
+
+```java
+ class ListNode {
+        int val;
+        ListNode next;
+    }
+		//迭代访问
+    void traverseList(ListNode head) {
+        for (ListNode p = head; p != null; p = p.next) {
+            //Iterator visit LinkedList
+        }
+    }
+		//递归访问
+    void traverseList(ListNode head) {
+        traverseList(head.next);
+    }
+```
+
+二叉树遍历框架：典型的非线性递归遍历结构：
+
+```java
+ class TreeNode{
+        int val;
+        TreeNode left;
+        TreeNode right;
+    }
+    
+    void traverseTree(TreeNode root){
+        traverseTree(root.left);
+        traverseTree(root.right);
+    }
+```
+
+在递归遍历结构之中，大家都是相似的。从二叉树扩展到多叉树也是一样的步骤：
+
+```java
+    class TreeNode{
+        int val;
+        TreeNode[] child;
+    }
+
+    void traverseTree(TreeNode root){
+        for(TreeNode treeNode:root.child){
+            traverseTree(treeNode);
+        }
+    }
+```
+
+从多叉树扩展到图的遍历也是一样的步骤，因为图就是几棵树的结合体。如果防止出现坏图的情况，只要使用一个布尔数组做标记就可以了。
+
+## 三、算法刷题指南
+
+先刷二叉树
