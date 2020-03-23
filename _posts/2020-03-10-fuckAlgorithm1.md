@@ -13,6 +13,8 @@ tags:								#标签
 
 看到 Github 的 trend 上面有个迅速攀升的 repo，一看是讲如何面对算法和如何解决算法的。刚好在家闲来无事，学习一下。
 
+https://github.com/labuladong/fucking-algorithm
+
 能看到真的说人话的教程真的很幸运，不要放弃这种学习透彻的机会。
 
 # 学习数据结构和算法的框架思维
