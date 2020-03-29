@@ -7,10 +7,10 @@ author:     Haiming 						# 作者
 header-img: img/post-bg-2015.jpg 	#这篇文章标题背景图片
 catalog: true 						# 是否归档
 tags:								#标签
-    - 编程
+    - Programming
     - 日常
     - 记录
-    - 学习
+    - Study
     - JavaScript
 ---
 在ES6之中，新增了let和const的变量形式，在阅读了[阮一峰老师的ES6](http://es6.ruanyifeng.com/#docs/let)教程之后，做一点基础的分析和总结。

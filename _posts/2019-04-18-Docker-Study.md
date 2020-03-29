@@ -7,10 +7,10 @@ author:     Haiming 						# 作者
 header-img: img/post-bg-2015.jpg 	#这篇文章标题背景图片
 catalog: true 						# 是否归档
 tags:								#标签
-    - 编程
+    - Programming
     - Docker
     - 记录
-    - 学习
+    - Study
 ---
 # 1. 什么是Docker
 Docker的英文定义是：Docker is a computer program that performs operating-system-level virtualization.
