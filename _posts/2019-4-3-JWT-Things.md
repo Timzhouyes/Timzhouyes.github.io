@@ -7,10 +7,10 @@ author:     Haiming 						# 作者
 header-img: img/post-bg-2015.jpg 	#这篇文章标题背景图片
 catalog: true 						# 是否归档
 tags:								#标签
-    - 编程
+    - Programming
     - JWT
     - 记录
-    - 学习
+    - Study
 ---
 After reading a [toturial](http://www.ruanyifeng.com/blog/2018/07/json_web_token-tutorial.html) of Mr.Ruan, just make some notes to memory.
 
