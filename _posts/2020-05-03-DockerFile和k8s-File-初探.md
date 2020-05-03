@@ -205,4 +205,94 @@ services:
 
 镜像位置，示例之中为：``docker.services.net/application-internal-api:${APPLICATION_VERSION}`。注意此处的link之中是带有参数的，参数在下面会标识出来。一般而言都是代表拉取image的版本（其他也没啥可以进行标识的了）。
 
-## 
+## 2.3 environment
+
+实际的作用就是对于一些变量进行参数化的操作。此处有：
+
+```yaml
+    environment:
+      - SPRING_PROFILES_ACTIVE=${APPLICATION_ENV}
+      - APPLICATION_ENV=${APPLICATION_ENV}
+      - CONTAINER_HOST=${CONTAINER_HOST}
+```
+
+那可能会问，这些参数总要有确定的值标识在其中啊？那这个值在哪表示呢？
+
+就在下面的`env_file`之中表示。具体下面介绍到会讲
+
+## 2.4 volumes
+
+看这个路径名字也能看出来了，此处是用来表示log所在位置的路径
+
+## 2.5 env_file
+
+`env_file`之中的内容实际上是`K-V`对，那么在environment或者是在项目之中使用的配置，就会去这些文件之中找，并且将其注入进去。如果找不到，程序会直接在Spring Boot的启动阶段报错。
+
+## 2.6 ports
+
+显而易见，就是外部端口和内部端口的映射情况。此处对外暴露的端口为8888，但是我们知道，Spring Boot启动时候的默认端口是8080，所以将两个端口的映射做好。
+
+## 2.7 deploy
+
+```yaml
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        max_attempts: 2
+```
+
+此处的update_config:
+
+### UPDATE_CONFIG
+
+Configures how the service should be updated. Useful for configuring rolling updates.
+
+- `parallelism`: The number of containers to update at a time.
+- `delay`: The time to wait between updating a group of containers.
+- `failure_action`: What to do if an update fails. One of `continue`, `rollback`, or `pause` (default: `pause`).
+- `monitor`: Duration after each task update to monitor for failure `(ns|us|ms|s|m|h)` (default 0s).
+- `max_failure_ratio`: Failure rate to tolerate during an update.
+- `order`: Order of operations during updates. One of `stop-first` (old task is stopped before starting new one), or `start-first` (new task is started first, and the running tasks briefly overlap) (default `stop-first`) **Note**: Only supported for v3.4 and higher.
+
+那么可知下面字段的内容为：
+
+1. replica：在集群之中启动两台实例
+2. parallelism: 每次一台机器进行update
+3. delay: 在一组container 升级的时候，彼此之间延迟10秒
+4. order：有两种方式：`stop-first`和`start-first`。我们用的是`start-first`，意味着先启动新的任务，再关闭老的任务。同理可得`stop-first`是什么意思。
+
+5. restart_policy：其中的`max_attempts`就是说最多重启两次。
+
+## 2.8 logging
+
+```yaml
+    logging:
+      options:
+        max-size: "20m"
+```
+
+这个含义很显而易见了，此处的配置只是说log的最大的体积不可以超过20m
+
+## 2.9 healthcheck
+
+用来做”该容器是否或者“的判定。此处的url是spring默认的报活URL，而不是公司的URL，所以我放出来了。
+
+```yaml
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/actuator/info"]
+      start_period: 500s
+      retries: 3
+      interval: 5s
+```
+
+还是上官方文档：
+
+**start period** provides initialization time for containers that need time to bootstrap. Probe failure during that period will not be counted towards the maximum number of retries. However, if a health check succeeds during the start period, the container is considered started and all consecutive failures will be counted towards the maximum number of retries.
+
+间隔5秒，重试次数是3次，至于为什么要在500秒之后才开始判定，原因是给程序一个启动的时间
+
+# 3. 
