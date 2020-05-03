@@ -1,7 +1,7 @@
 ---
 layout:     post   				    # 使用的布局（不需要改）
-title:      gitlab CI与DockerFile/kubernetes File初探		# 标题 
-subtitle:   了解一下其中的异同        #副标题
+title:      gitlab CI与DockerFile初探		# 标题 
+subtitle:   初步梳理       #副标题
 date:       2020-05-03		# 时间
 author:     Haiming 						# 作者
 header-img: img/post-bg-2015.jpg 	#这篇文章标题背景图片
@@ -295,4 +295,3 @@ Configures how the service should be updated. Useful for configuring rolling upd
 
 间隔5秒，重试次数是3次，至于为什么要在500秒之后才开始判定，原因是给程序一个启动的时间
 
-# 3. 
