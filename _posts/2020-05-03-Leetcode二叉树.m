@@ -2148,3 +2148,86 @@ class Trie {
 }
 ```
 
+## 35 Trie实现求前缀和
+
+677 Map Sum Pairs
+
+https://leetcode.com/problems/map-sum-pairs/
+
+本题之中借助Trie实现。两个方法：insert()和 sum()。
+
+其中insert()是和之前一样的，只是将node之中的boolean isLeaf改成了int val。之外，没有任何改变。
+
+但是`int sum(String prefix, Node node)`的改变比较大：
+
+首先，将树递归到prefix的长度位0的时候，期间的值不计算。当prefix的值是0的时候，先将当前节点的值赋给sum，然后对其所有子节点进行递归。最后返回sum。
+
+> Implement a MapSum class with `insert`, and `sum` methods.
+>
+> For the method `insert`, you'll be given a pair of (string, integer). The string represents the key and the integer represents the value. If the key already existed, then the original key-value pair will be overridden to the new one.
+>
+> For the method `sum`, you'll be given a string representing the prefix, and you need to return the sum of all the pairs' value whose key starts with the prefix.
+>
+> **Example 1:**
+>
+> ```
+> Input: insert("apple", 3), Output: Null
+> Input: sum("ap"), Output: 3
+> Input: insert("app", 2), Output: Null
+> Input: sum("ap"), Output: 5
+> ```
+
+```java
+class MapSum {
+    public class Node{
+        Node[] array = new Node[26];
+        int val;
+    }
+    private Node root = new Node();
+    /** Initialize your data structure here. */
+    public MapSum() {
+        
+    }
+    
+    public void insert(String key, int val) {
+        insert(key,val,root);
+    }
+    
+    private void insert(String key, int val, Node node){
+        if(node==null) return;
+        if(key.length()==0){
+            node.val = val;
+            return;
+        }
+        int index = indexOfChar(key.charAt(0));
+        if(node.array[index]==null){
+            node.array[index] = new Node();
+        }
+        insert(key.substring(1),val,node.array[index]);
+        
+    }
+    
+    public int sum(String prefix) {
+        return sum(prefix,root);
+    }
+    
+    private int sum(String prefix, Node node){
+        if(node==null) return 0;
+        if(prefix.length()!=0){
+            Node node1 = node.array[indexOfChar(prefix.charAt(0))];
+            return sum(prefix.substring(1),node1);
+        }
+        int sum = node.val;
+        for(Node child:node.array){
+            sum+=sum(prefix,child);
+            System.out.println(prefix);
+        }
+        return sum;
+    }
+    
+    private int indexOfChar(char c){
+        return c-'a';
+    }
+}
+```
+
