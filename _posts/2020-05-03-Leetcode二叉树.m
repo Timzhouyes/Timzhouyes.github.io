@@ -1619,3 +1619,532 @@ https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/
 > - All of the nodes' values will be unique.
 > - p and q are different and both values will exist in the binary tree.
 
+```java
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root==null || root==p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left,p,q);
+        TreeNode right = lowestCommonAncestor(root.right,p,q);
+        if(right==null){
+            return left;
+        }
+        if(left==null){
+            return right;
+        }
+        return root;
+    }
+}
+```
+
+## * 28. 从有序数组之中构建BST
+
+108 Convert Sorted Array to Binary Search Tree
+
+https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/description/
+
+题目不仅要求BST，而且要求是 height balanced 的 BST。那么我们就不能做一个类似链表的一样的最简单的BST来提交了。
+
+如何尽量保证高度平衡？因为是有序数组，所以尽量每次都取中间的值来产生TreeNode。
+
+本题之中需要自己写一个helper函数，`TreeNode helper(int[] nums, int i,int j)`。其中，i是起始值，j是终止值。递归的终止条件，就是当i>j的时候，也就是这个数组之中一个值都没有的时候，就直接返回null了。
+
+> Given an array where elements are sorted in ascending order, convert it to a height balanced BST.
+>
+> For this problem, a height-balanced binary tree is defined as a binary tree in which the depth of the two subtrees of *every* node never differ by more than 1.
+>
+> **Example:**
+>
+> ```
+> Given the sorted array: [-10,-3,0,5,9],
+> 
+> One possible answer is: [0,-3,9,-10,null,5], which represents the following height balanced BST:
+> 
+>       0
+>      / \
+>    -3   9
+>    /   /
+>  -10  5
+> ```
+
+```java
+class Solution {
+    public TreeNode sortedArrayToBST(int[] nums) {
+        return helper(nums,0, nums.length-1);
+    }
+    
+    public TreeNode helper(int[] nums, int i,int j){
+        if(i>j) return null;
+        int mid = (i+j)/2;
+        TreeNode root = new TreeNode(nums[mid]);
+        root.left = helper(nums,i,mid-1);
+        root.right = helper(nums,mid+1,j);
+        return root;
+    }
+}
+```
+
+## * 29. 从有序链表之中恢复BST
+
+109 Convert Sorted List to Binary Search Tree
+
+https://leetcode.com/problems/convert-sorted-list-to-binary-search-tree/
+
+本题和上一题有些相似，但是链表本身如何判断“中位数”？ 答案是使用快慢指针。
+
+由于要以“中位数”为界限进行分割，所以要得到三个位置的ListNode: 中位数之前，中位数，中位数之后：
+
+以中位数为值进行TreeNode的组建，将中位数之前的ListNode的next设置成null，用来分割链表；以中位数之后的ListNode作为递归的两个起点之一。
+
+所以本题之中比较有趣的是`ListNode preMid(ListNode head)`，如其含义所示，preMid，就是Mid之前的ListNode。
+
+**且其快慢指针不是同时开始，快指针本来就比慢指针快一步。**
+
+> Given a singly linked list where elements are sorted in ascending order, convert it to a height balanced BST.
+>
+> For this problem, a height-balanced binary tree is defined as a binary tree in which the depth of the two subtrees of *every* node never differ by more than 1.
+>
+> **Example:**
+>
+> ```
+> Given the sorted linked list: [-10,-3,0,5,9],
+> 
+> One possible answer is: [0,-3,9,-10,null,5], which represents the following height balanced BST:
+> 
+>       0
+>      / \
+>    -3   9
+>    /   /
+>  -10  5
+> ```
+
+```java
+class Solution {
+    public TreeNode sortedListToBST(ListNode head) {
+        if(head == null) return null;
+        if(head.next == null) return new TreeNode(head.val);
+        ListNode preMid = preMid(head);
+        TreeNode res = new TreeNode(preMid.next.val);
+        ListNode midNext = preMid.next.next;
+        preMid.next = null;
+        res.left = sortedListToBST(head);
+        res.right = sortedListToBST(midNext);
+        return res;
+    }
+    
+    public ListNode preMid(ListNode head){
+        ListNode slow = head;
+        ListNode fast = head.next;
+        ListNode preMid = head;
+        while(fast!=null && fast.next!=null){
+            preMid = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return preMid;
+    }
+}
+```
+
+## 30. 二叉树之中寻找两个节点值为一个给定值
+
+653 Two Sum IV - Input is a BST
+
+https://leetcode.com/problems/two-sum-iv-input-is-a-bst/
+
+暴力解法，直接生成有序arrayList然后直接双指针。
+
+大佬还有这样一句评语：
+
+“应该注意到，这一题不能用分别在左右子树两部分来处理这种思想，因为两个待求的节点可能分别在左右子树中。”
+
+> Given a Binary Search Tree and a target number, return true if there exist two elements in the BST such that their sum is equal to the given target.
+>
+> **Example 1:**
+>
+> ```
+> Input: 
+>     5
+>    / \
+>   3   6
+>  / \   \
+> 2   4   7
+> 
+> Target = 9
+> 
+> Output: True
+> ```
+>
+>  
+>
+> **Example 2:**
+>
+> ```
+> Input: 
+>     5
+>    / \
+>   3   6
+>  / \   \
+> 2   4   7
+> 
+> Target = 28
+> 
+> Output: False
+> ```
+
+```java
+class Solution {
+    ArrayList<Integer> arrayList = new ArrayList<>();
+    public boolean findTarget(TreeNode root, int k) {
+        if(root==null) return false;
+        middleOrder(root);
+        int i=0,j=arrayList.size()-1;
+        while(i<j){
+            int small = arrayList.get(i);
+            int big = arrayList.get(j);
+            if(small+big<k) i=i+1;
+            if(small+big == k) return true;
+            if(small+big>k) j=j-1;
+        }
+        return false;
+    }
+    
+    public void middleOrder(TreeNode root){
+        if(root==null) return;
+        middleOrder(root.left);
+        arrayList.add(root.val);
+        middleOrder(root.right);
+    }
+}
+```
+
+## 31 BST之中两个数的最小差值
+
+530 Minimum Absolute Difference in BST
+
+https://leetcode.com/problems/minimum-absolute-difference-in-bst/
+
+中序遍历之后不断比较相邻两个数字差值即可。
+
+> Given a binary search tree with non-negative values, find the minimum [absolute difference](https://en.wikipedia.org/wiki/Absolute_difference) between values of any two nodes.
+>
+> **Example:**
+>
+> ```
+> Input:
+> 
+>    1
+>     \
+>      3
+>     /
+>    2
+> 
+> Output:
+> 1
+> 
+> Explanation:
+> The minimum absolute difference is 1, which is the difference between 2 and 1 (or between 2 and 3).
+> ```
+>
+>  
+>
+> **Note:**
+>
+> - There are at least two nodes in this BST.
+> - This question is the same as 783: https://leetcode.com/problems/minimum-distance-between-bst-nodes/
+
+```java
+class Solution {
+    ArrayList<Integer> arrayList = new ArrayList<>();
+    public int getMinimumDifference(TreeNode root) {
+        if(root==null) return 0;
+        inorder(root);
+        int ret = arrayList.get(1)-arrayList.get(0);
+        for(int i=0;i<arrayList.size()-1;i++){
+            if(ret>arrayList.get(i+1)-arrayList.get(i)){
+                ret=arrayList.get(i+1)-arrayList.get(i);
+            }
+        }
+        return ret;
+    }
+    
+    public void inorder(TreeNode root){
+        if(root==null) return;
+        inorder(root.left);
+        arrayList.add(root.val);
+        inorder(root.right);
+    }
+}
+```
+
+## *32 寻找BST之中出现次数最多的值
+
+501 Find Mode in Binary Search Tree
+
+https://leetcode.com/problems/find-mode-in-binary-search-tree/
+
+本题之中实际上使用了中序遍历来得到按序排列的元素值，然后在中序遍历的节点处理部分做了具体的逻辑操作。
+
+借助三个外部变量，一个curcnt代表当前的节点的出现次数，一个maxcnt代表已知的节点出现次数，一个TreeNode pre用来存储上一次处理的节点。
+
+那么在实际的逻辑:`inorder`之中，对于当前节点root的处理逻辑是：
+
+1. 如果pre非空，那么比较其和root的关系，如果值相同，那么curcnt+1，如果值不相同，那么直接将curcnt置为1（相当于重新初始化）
+2. 比较curcnt和maxcnt的关系，如果curcnt>maxcnt，那么将当前的数组清零，maxcnt=curcnt，且将当前节点的值塞入arrayList。如果相等，那么直接将值塞入arrayList即可。
+3. 最后将pre=root，即每次都要更新节点。
+
+> Given a binary search tree (BST) with duplicates, find all the [mode(s)](https://en.wikipedia.org/wiki/Mode_(statistics)) (the most frequently occurred element) in the given BST.
+>
+> Assume a BST is defined as follows:
+>
+> - The left subtree of a node contains only nodes with keys **less than or equal to** the node's key.
+> - The right subtree of a node contains only nodes with keys **greater than or equal to** the node's key.
+> - Both the left and right subtrees must also be binary search trees.
+>
+>  
+>
+> For example:
+> Given BST `[1,null,2,2]`,
+>
+> ```
+>    1
+>     \
+>      2
+>     /
+>    2
+> ```
+>
+>  
+>
+> return `[2]`.
+>
+> **Note:** If a tree has more than one mode, you can return them in any order.
+>
+> **Follow up:** Could you do that without using any extra space? (Assume that the implicit stack space incurred due to recursion does not count).
+
+```java
+class Solution {
+    int curcnt = 1;
+    int maxcnt = 1;
+    TreeNode pre = null;
+    
+    public int[] findMode(TreeNode root) {
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        inorder(root,arrayList);
+        int[] res = new int[arrayList.size()];
+        for(int i=0;i<arrayList.size();i++){
+            res[i]=arrayList.get(i);
+        }
+        return res;
+    }
+    
+    public void inorder(TreeNode root, List<Integer> nums){
+        if(root==null) return;
+        inorder(root.left,nums);
+        
+        if(pre!=null){
+            if(pre.val==root.val){
+                curcnt+=1;
+            }else{
+                curcnt=1;
+            }
+        }
+        
+        if(curcnt>maxcnt){
+            nums.clear();
+            maxcnt=curcnt;
+            nums.add(root.val);
+        }else if(curcnt==maxcnt){
+            nums.add(root.val);
+        }
+        
+        pre = root;
+        
+        inorder(root.right,nums);
+    }
+}
+```
+
+## 33. 序列化和反序列化二叉树
+
+449 [Serialize and Deserialize BST](https://leetcode-cn.com/problems/serialize-and-deserialize-bst/)
+
+本题我采用的是层序遍历。因为空的节点在序列化的过程之中也要表示出来，所以序列化和反序列化都需要对null的TreeNode进行特殊的处理。我是将null的地方以"*"表示，恢复的时候也要看当前节点是不是null。
+
+```java
+public class Codec {
+
+    // Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        if(root==null) return "";
+        ArrayList<Integer> res = layerOrder(root);
+        StringBuilder sb = new StringBuilder();
+
+        for(int i=0;i<res.size();i++){
+            if(res.get(i)==null){
+                sb.append("*");
+            }else{
+                sb.append(res.get(i));
+            }
+            sb.append(" ");
+        }
+
+        sb.deleteCharAt(sb.length()-1);
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
+    // Decodes your encoded data to tree.
+    public TreeNode deserialize(String data) {
+        if(data=="") return null;
+        String[] strArray = data.split(" ");
+        int length = strArray.length;
+        TreeNode root = new TreeNode(Integer.parseInt(strArray[0]));
+        if(length==1) return root;
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(root);
+        int counter =1;
+        while(!queue.isEmpty() && counter<length){
+            TreeNode node = queue.remove();
+            if(node!=null){
+                node.left = changeStringToTreeNode(strArray[counter]);
+                counter++;
+                node.right = changeStringToTreeNode(strArray[counter]);
+                counter++;
+                queue.add(node.left);
+                queue.add(node.right);
+            }
+        }
+        return root;
+    }
+
+    public TreeNode changeStringToTreeNode(String s){
+        if(s.equals("*")) return null;
+        else{
+            return new TreeNode(Integer.parseInt(s));
+        }
+    }
+
+    public ArrayList<Integer> layerOrder(TreeNode node){
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.add(node);
+        while(!queue.isEmpty()){
+            int count = queue.size();
+            for(int i=0;i<count;i++){
+                TreeNode node1 = queue.remove();
+                if(node1==null){
+                    arrayList.add(null);
+                }else{
+                    arrayList.add(node1.val);
+                    queue.add(node1.left);
+                    queue.add(node1.right);
+                }
+            }
+        }
+
+        return arrayList;
+    }
+}
+```
+
+# Trie
+
+## * 34 实现Trie
+
+208 Implement Trie (Prefix Tree)
+
+https://leetcode.com/problems/implement-trie-prefix-tree/
+
+题目要求实现Trie,重点在于Trie的值实际上是在树的“边”上，而非是节点上面。但是二叉树之中又只有节点能存储值，所以借助节点来存储其状态是否为单词已结束。
+
+首先，实现Trie需要一个内部类Node,也需要初始化一个Node作为根节点。这个根节点之中维护着一个Node的长度为26的数组，和一个isLeaf的状态位。如果在添加的过程之中要添加哪个字母，就将相应位置上面的这个Node初始化。那么在查找的时候，如果对应位置上面的Node是null，就意味着这个单词在Trie之中还没出现。如果不是null，实际上意味的是这个边上是有值的。
+
+所有的函数都需要辅助函数，辅助函数之中需要多加一个Node作为参数方便递归，因为每次都会将第一个字母拿走然后再递归相应的节点。
+
+单独写了另一个辅助函数`indexOfNode`，用来求在数组之中的位置。
+
+> Implement a trie with `insert`, `search`, and `startsWith` methods.
+>
+> **Example:**
+>
+> ```
+> Trie trie = new Trie();
+> 
+> trie.insert("apple");
+> trie.search("apple");   // returns true
+> trie.search("app");     // returns false
+> trie.startsWith("app"); // returns true
+> trie.insert("app");   
+> trie.search("app");     // returns true
+> ```
+>
+> **Note:**
+>
+> - You may assume that all inputs are consist of lowercase letters `a-z`.
+> - All inputs are guaranteed to be non-empty strings.
+
+```java
+class Trie {
+    private class Node{
+        Node[] array = new Node[26];
+        boolean isLeaf;
+    }
+    
+    private Node root = new Node();
+    
+    /** Initialize your data structure here. */
+    public Trie() {
+        
+    }
+    
+    /** Inserts a word into the trie. */
+    public void insert(String word) {
+        insert(word,root);
+    }
+    
+    private void insert(String word, Node node){
+        if(node==null) return;
+        if(word.length()==0) {
+            node.isLeaf=true;
+            return;
+        }
+        char c= word.charAt(0);
+        int index = indexOfNode(c);
+        if(node.array[index]==null){
+            node.array[index]=new Node();
+        }
+        insert(word.substring(1),node.array[index]);
+    }
+    
+    /** Returns if the word is in the trie. */
+    public boolean search(String word) {
+        return search(word,root);
+    }
+    
+    public boolean search(String word, Node node){
+        if(node==null) return false;
+        if(word.length()==0) return node.isLeaf;
+        int index = indexOfNode(word.charAt(0));
+        if(node.array[index]==null) return false;
+        return search(word.substring(1),node.array[index]);
+    }
+    
+    /** Returns if there is any word in the trie that starts with the given prefix. */
+    public boolean startsWith(String prefix) {
+        return startsWith(prefix, root);
+    }
+    
+    public boolean startsWith(String prefix, Node node){
+        if(node==null) return false;
+        if(prefix.length()==0) return true;
+        int index = indexOfNode(prefix.charAt(0));
+        if(node.array[index]==null) return false;
+        return startsWith(prefix.substring(1),node.array[index]);
+    }
+    
+    public int indexOfNode(char c){
+        return c-'a';
+    }
+}
+```
+
