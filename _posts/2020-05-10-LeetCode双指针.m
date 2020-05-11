@@ -133,3 +133,53 @@ class Solution {
 }
 ```
 
+# 4. 容许一个字母不符合规则的回文字符串
+
+680. Valid Palindrome II (Easy)
+
+[Leetcode](https://leetcode.com/problems/valid-palindrome-ii/description/) / [力扣](https://leetcode-cn.com/problems/valid-palindrome-ii/description/)
+
+题目之中允许了一个字母不符合规则。也就是如果删掉一个字母，是符合规则的，那么也可以。
+
+本题之中还需要一个辅助函数`boolean isPalindrome(String s,int start,int end)`。
+
+那么就分成了两部分：
+
+1. 直接按照回文串的标准判断，不管其他的部分
+
+2. 如果有一个字符不满足标准，假设此时的前指针是i，后指针是j，那么借助辅助函数来做：
+
+   ```java
+   return isPalindrome(s,i+1,j) || isPalindrome(s,i,j-1);
+   ```
+
+   也就是将第一个指针往后挪一位，或者将最后一个指针往前挪一位进行判断，因为只要有符合的就可以，所以二者是或的关系。且指针范围之外的部分已经判断完毕，所以可以直接略去。
+
+```java
+class Solution {
+    public boolean validPalindrome(String s) {
+        if(s.length()==0) return true;
+        int i=0,j=s.length()-1;
+        while(i<=j){
+            if(s.charAt(i)==s.charAt(j)){
+                i++;
+                j--;
+            }else{
+                return isPalindrome(s,i+1,j) || isPalindrome(s,i,j-1);
+            }
+        }
+        return true;
+    }
+    
+    public boolean isPalindrome(String s,int start,int end){
+        if(start>end) return false;
+        while(start<=end){
+            if(s.charAt(start)!=s.charAt(end)) return false;
+            start++;
+            end--;
+        }
+        return true;
+    }
+}
+```
+
