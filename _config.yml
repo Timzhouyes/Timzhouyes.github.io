@@ -1,10 +1,10 @@
 # Site settings
-title: Haiming's Blog
-SEOTitle: 海铭的博客 | Haiming's Blog
+title: Timzhouyes's Blog
+SEOTitle: Timzhouyes的博客 | Timzhouyes's Blog
 header-img: img/post-bg-desk.jpg
-email: zhouhaimingxd@gmail.com
+# email: zhouhaimingxd@gmail.com
 description: "Every failure is leading towards success."
-keyword: "Haiming, Haiming's Blog, 海铭的博客, zhouhaiming, 海铭, Android,Java,Programming"
+keyword: "Haiming, Haiming's Blog, 海铭的博客, zhouhaiming, 海铭, Android,Java,Programming,Timzhouyes"
 url: "http://Timzhouyes.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
 github_repo: "https://github.com/Timzhouyes/Timzhouyes.github.io.git" # you code repository
@@ -21,7 +21,7 @@ RSS: true
 # weibo_username:    
 zhihu_username:     ming-hai-zhou
 github_username:    Timzhouyes
-facebook_username:  zhouhaimingxd
+# facebook_username:  zhouhaimingxd
 #jianshu_username:   
 #twitter_username:   
 
