@@ -587,3 +587,299 @@ We already introduce it briefly, and can see that traits are similar to Java's i
 
 Classes and objects can extend traits, but traits cannot be instantiated and therefore **have no parameters**.
 
+To use traits, we can implement it and then override methods, like:
+
+```scala
+trait Iterator[A] {
+  def hasNext: Boolean
+
+  def next(): A
+
+}
+
+class IntIterator(to: Int) extends Iterator[Int] {
+    private var current = 0
+
+  override def hasNext: Boolean = current<to
+
+  override def next(): Int = {
+    if(hasNext){
+      val t=current
+      current+=1
+      t
+    } else 0
+  }
+}
+
+object CanRun{
+  def main(args: Array[String]): Unit = {
+    val iterator = new IntIterator(10)
+    println(iterator.next())
+    println(iterator.next())
+  }
+}
+```
+
+The `IntIterator` class takes a parameter `to` as the upper bound.
+
+Also, subtype of a trait can be used when a given trait is required. Like:
+
+```scala
+trait Pet {
+  val name: String
+}
+
+class Cat(val name: String) extends Pet
+
+class Dog(val name: String) extends Pet
+
+object PetRun {
+  def main(args: Array[String]): Unit = {
+    val dog = new Dog("DogName")
+    val cat = new Cat("CatName")
+
+    val animals = ArrayBuffer.empty[Pet]
+    animals.append(dog).append(cat)
+    animals.foreach(pet => println(pet.name))
+
+  }
+}
+```
+
+In this example, we can see that we use `Pet` in the `ArrayBuffer`, but we use the subtype of it, such as `Dog` and `Cat` to implement it. This is how we use the traits.
+
+# 6. Tuples
+
+Tuples are used to contain  fixed number of elements, and each with a distinct type. 
+
+**Tuples are immutable.** And also be used for returning multiple values from a method.
+
+We can define a tuple like this:
+
+`val ingredient = ("Sugar" , 25)`
+
+See here we don't need to figure the kind of tuple. However, tuple in Scala is a little dfferent from what other kinds of data structures:
+
+> As shown, just put some elements inside parentheses, and you have a tuple. Scala tuples can contain between two and 22 items, and they’re useful for those times when you just need to combine a few things together, and don’t want the baggage of having to define a class, especially when that class feels a little “artificial” or phony.
+>
+> > Technically, Scala 2.x has classes named `Tuple2`, `Tuple3` … up to `Tuple22`. As a practical matter you rarely need to know this, but it’s also good to know what’s going on under the hood. (And this architecture is being improved in Scala 3.)
+
+**How to use tuples?**
+
+If we want to get elements in tuples, we can use a special grammer which begins with 1 to get it. 
+
+**Pattern matching on tuples**
+
+A tuple also can be taken apart using pattern matching.
+
+Here is an example on all things we mentioned above. 
+
+```scala
+object LearnTuple {
+  def main(args: Array[String]): Unit = {
+    val ingredient = ("Sugar", 25)
+    val (name, quality) = ingredient
+    println(ingredient._1)
+    println(ingredient._2)
+    println(name)
+    println(quality)
+
+    val planets = List(("Mercury", 57.9), ("Venus", 108.2), ("Earth", 149.6), ("Mars", 227.9), ("Jupiter", 778.3))
+    planets.foreach {
+      case ("Earth", distance) => println(s"Our planet is $distance km from Sun")
+      case _ =>
+    }
+
+    val numPairs = List((2, 5), (3, -7), (20, 56))
+    for ((a, b) <- numPairs) {
+      println(a * b)
+    }
+  }
+}
+
+```
+
+Results;
+
+```scala
+Sugar
+25
+Sugar
+25
+Our planet is 149.6 km from Sun
+10
+-21
+1120
+```
+
+# 7. Class composition with mixins
+
+One trait extends an abstract class is called a `mixin`
+
+Simple examples first:
+
+```scala
+abstract class A {
+  val message: String
+}
+
+class B extends A {
+  val message = "I am an instance of class B"
+}
+
+trait C extends A {
+  def loudMessage = message.toUpperCase()
+}
+
+class D extends B with C
+
+object LearnMixins {
+  def main(args: Array[String]): Unit = {
+    val d = new D
+    println(d.message)
+    println(d.loudMessage)
+  }
+}
+
+```
+
+Result is:
+
+```scala
+I am an instance of class B
+I AM AN INSTANCE OF CLASS B
+```
+
+Now we analyse the code:
+
+Class `D` has superclass `B` and a mixin `C`. Classes can only have one superclass, but can have a lot of mixins -- by using keywords `extends` and `with` respectively. Mixins and superclass can have the same supertype.
+
+In this fragment of code, we can see that class D has a supertype class A, and use the mixin C.
+
+What if we don't want to figure the type of data in traits?
+
+We can define a abstract class with type and some methods we want, and then define a mixin to extend it, in the below example, we define a mixin which has function `foreach`. Then we compose them up, and use them.
+
+```scala
+abstract class AbsIterator {
+  type T
+
+  def hasNext: Boolean
+
+  def next(): T
+}
+
+class StringIterator(s: String) extends AbsIterator {
+  type T = Char
+  private var i = 0
+
+  override def hasNext: Boolean = i < s.size
+
+  override def next(): Char = {
+    val ch = s.charAt(i)
+    i += 1
+    ch
+  }
+}
+
+trait RichIterator extends AbsIterator {
+  def foreach(f: T => Unit): Unit = while (hasNext) f(next())
+}
+
+object MixinOnAbstractClass {
+  class RichStringIter extends StringIterator("Scala") with RichIterator
+
+  def main(args: Array[String]): Unit = {
+    val richStringIter = new RichStringIter
+    richStringIter.foreach(println)
+  }
+
+}
+```
+
+From the code segment, we define a `AbsIterator` which is an abstract class,  also has the `T` as type. Then we define a class to implement these methods it has. After that, we define a trait which implement the abstract class, to emhance it by defining `foreach` function. Last, we use them together.
+
+Result is:
+
+```scala
+S
+c
+a
+l
+a
+```
+
+# 8. Higher-order functions
+
+In Scala, we can pass in functions as parameters, and also can return functions as return value.
+
+Here is functions that accept functions as parameters:
+
+```Scala
+object SalaryRaiser {
+  private def promotion(salaries: List[Double], promotionFunc: Double => Double): List[Double] = {
+    salaries.map(promotionFunc)
+  }
+
+  def smallPromotion(salaries: List[Double]): List[Double] =
+    promotion(salaries, salary => salary * 1.1)
+
+  def middlePromotion(salaries: List[Double]): List[Double] =
+    promotion(salaries, salary => salary * 1.5)
+
+  def hugePromotion(salaries: List[Double]): List[Double] =
+    promotion(salaries, salary => salary * 2)
+}
+```
+
+Can see that we pass the `promotionFunc` as parameter for the function. 
+
+In Scala, if we want to define a function, the easiest way is like this: `(Type1 var1, Type2 var2)=>Type3`
+
+So in the same way we can define functions that can return functions as the return values, such as :
+
+```scala
+def urlBuilder(ssl: Boolean, domainName: String): (String, String) => String ={
+    val schema = if(ssl) "https://" else "http://"
+    (endPoint:String,query:String)=>s"$schema$domainName/$endPoint?$query"
+  }
+```
+
+and can be used like:
+
+```scala
+		val domainName = "www.example.com"
+    def getURL = urlBuilder(ssl=true, domainName)
+    val endpoint = "users"
+    val query = "id=1"
+    val url = getURL(endpoint, query)
+    println(url)
+```
+
+# 9. Nested Methods
+
+In a method we can define another method, like this:
+
+```scala
+object NestedMethodsStudy {
+  def factorial(x: Int): Int = {
+    def fact(x: Int, accumulator: Int): Int = {
+      if (x <= 1) accumulator
+      else fact(x - 1, x * accumulator)
+    }
+
+    fact(x, 1)
+  }
+
+  def main(args: Array[String]): Unit = {
+    println("Factorial of 10 "+factorial(10))
+  }
+}
+```
+
+And output is:
+
+```scala
+Factorial of 10 3628800
+```
+
