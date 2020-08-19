@@ -883,3 +883,57 @@ And output is:
 Factorial of 10 3628800
 ```
 
+We can refer from the API which Scala provided `foldLeft`:
+
+`def foldLeft[B](z:B)(op(B,A)=>B):B`
+
+`foldLeft` applies a two-parameter function `op` to an initial value `z` and all elements of this collection, going from left to right. 
+
+Example:
+
+```scala
+    val res = numbers.foldLeft(0)((m, n) => m + n)
+```
+
+# 10. Case classes
+
+Case classes are mostly like normal classes, but have some difference. 
+
+1. When create a case class with parameters, the parameters are public `val`s.It means that you cannot change them. 
+
+```scala
+case class Message(sender: String, recipient: String, body: String)
+
+def main(args: Array[String]): Unit = {
+    val message1 = Message("guillaume@quebec.ca",
+      "jorge@catalonia.es",
+      "Ça va ?"
+    )
+    println(message1.sender)
+    message1.sender="I wanna change" //will cause compile failed, "reassignment to val"
+  }
+```
+
+2. When we would like to change some values in case classes, we can use `copy` method. It will create  **a shallow copy** of an instance class.And we could optionally change the constuctor arguments.
+
+```scala
+case class Message(sender: String, recipient: String, body: String)
+val message4 = Message("julien@bretagne.fr", "travis@washington.us", "Me zo o komz gant ma amezeg")
+val message5 = message4.copy(sender = message4.recipient, recipient = "claire@bourgogne.fr")
+message5.sender  // travis@washington.us
+message5.recipient // claire@bourgogne.fr
+message5.body  // "Me zo o komz gant ma amezeg"
+```
+
+3. When we use case classes to do comparison, they will be compared by structure not by reference. It means if two things the value are the same, then it will return true unless they are different objects.
+
+```scala
+   case class Message(sender: String, recipient: String, body: String)
+   
+   val message2 = Message("jorge@catalonia.es", "guillaume@quebec.ca", "Com va?")
+   val message3 = Message("jorge@catalonia.es", "guillaume@quebec.ca", "Com va?")
+   val messagesAreTheSame = message2 == message3  // true
+```
+
+   
+
