@@ -290,7 +290,7 @@ A **reference** value which refers to a special "null" object.
 
 First, let us see on picture:
 
-![Scala Type Hierarchy](../img/2020-08-04-Scala-study/unified-types-diagram.svg)
+![Scala Type Hierarchy](/img/2020-08-04-Scala-study/unified-types-diagram.svg)
 
 This diagram shows a subset of type hierarchy.
 
@@ -360,7 +360,7 @@ The last one represent a function. Because all elements are instance of `Scala.a
 
 ## 3.1 Type casting
 
-![Scala Type Hierarchy](../img/2020-08-04-Scala-study/type-casting-diagram.svg)
+![Scala Type Hierarchy](/img/2020-08-04-Scala-study/type-casting-diagram.svg)
 
 Also example first :)
 
