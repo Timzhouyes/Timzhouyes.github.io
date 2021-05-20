@@ -165,3 +165,112 @@ watermark 是用来确定**一个window 已经结束，可以开始 process **�
 
 # 24 | Watermark Generator
 
+![image-20210515204844893](../img/2021-05-01-FlinkDataStream 实践原理/image-20210515204844893.png)
+
+在之前的版本之中，flink 提供了前两中 Assigner 的模式，但是在1.11以后的版本之中全都废除掉了，取而代之的是 `WatermarkStrategy`。那么我们如何定义一个 `WatermarkStrategy`呢？ 
+
+其中主要组成的是两部分，一部分是**抽取当前事件的 timestamp**，另外一个部分是 **generate watermark**。注意其中 generateWatermark 返回的对象就是 Watermark。
+
+![image-20210515205152919](../img/2021-05-01-FlinkDataStream 实践原理/image-20210515205152919.png)
+
+![image-20210515205202374](../img/2021-05-01-FlinkDataStream 实践原理/image-20210515205202374.png)
+
+注意，如果想要自定义`WatermarkStrategy`的话，都需要extend 相应的抽象类。
+
+# 25 | Windows窗口计算
+
+由于 flink 是将整体作为流进行看待和处理，所以在处理的时候，需要将其进行一定的边界划分。将其看做是一段段的数据，然后再去将某个边界之中的内容进行汇总并且处理。
+
+![image-20210516105133047](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516105133047.png)
+
+上面是几种 window 的应用场景：
+
+1. 聚合统计：将某些数据源的数据进行聚合然后再写入相应的外围数据库，比如将1分钟或者5分钟之内的数据进行聚合处理之后输入到 Druid 之中
+2. 记录合并：有些数据源的内容相对来说比较零散，这个时候就可以先将其针对某些方面的信息进行合并再写入，比如从 kafka 之中读取内容，在一定的时间窗口之中根据用户信息先做一个合并再写入 ES，这样相对而言减少 ES 的写入压力
+3. 双流 join：两个数据流如果不使用 window 的形式进行 join，那么成本代价会比较大。在一定的时间窗口之内进行 join，相对而言其代价就是可以接受的。
+
+**window 抽象概念**
+
+![image-20210516110121027](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516110121027.png)
+
+上面这张图是将 window 的概念做了相应的抽象。先看前面这部分：
+
+1. DataStream 进来之后，如果使用`keyBy()`的的话，是先变成 keyedStream，这个部分主要是将其变成可以使用 key 做操作的数据。但是如果不使用`keyBy()`，而是使用`map()`，那么其生成的 DataStream 则是对于全量数据的处理，使用`windowAll()`之后生成的也是全量数据的相关信息。
+2. 后面的圆角矩形之中的`trigger`和 evictor 是可选的，第一个是以什么样的规则来触发 window，第二个是剔除器，可以按照某种规则来剔除数据。
+
+# 26 | Window Assigner
+
+其实主要支持的window 就两种，一种是 time window, 另外一种是 count window。前者基于时间，后者基于数量。而每一种之中都有两种，一种是 keyed window，另一种是 non-keyed window
+
+![image-20210516130430432](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516130430432.png)
+
+在 time window 之中，其实各种各样的 window 都是基于 global window 再添加各种各样的 trigger 实现的。
+
+# 27 | Window Trigger
+
+如果想要不仅仅依赖于 watermark 和 window 结束时间来 trigger 相应 event，而是想要每隔一段时间就去输出相应结果，同时对结果进行更新，那么可以使用`ContinuousEventTimeTrigger`， 这个来在 watermark 和 window 之外再覆盖一个定时的窗口触发器来做到这一点。
+
+![image-20210516173402191](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516173402191.png)
+
+![image-20210516173408464](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516173408464.png)
+
+![image-20210516173500440](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516173500440.png)
+
+但是不同模式下面其结果会不同，append 模式下面和 update 模式就完全不相同。append 之中对于某一个 window 之中的时间，会有重复性的输出（因为其 append，所以没法修改之前的结果内容）。这种 append 方式是有问题的，下面会讲问题如何处理。
+
+**Update:**
+
+![image-20210516173635306](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516173635306.png)
+
+**Append:**
+
+![image-20210516173652183](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516173652183.png)
+
+看红框内部的内容，可以发现其 window result 之中有两个重复的部分，如果下游区分不出哪个是正确的结果，就会进行一次累加，那么下游得到的结果就是`[12:00-12:05),9`。这种错误结果是不可以接受的。这种情况下，就需要配合`PuringTrigger.of()`来进行处理。
+
+![image-20210516174152664](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516174152664.png)
+
+上图是接入了`PuringTrigger`之后的结果，可以看到其将红框部分的数据进行了清除，那么再次输出的数据就会像下图：
+
+![image-20210516174302675](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516174302675.png)
+
+这个时候下游将结果之中的3+3得起来，就能够得到正确的结果了。
+
+# 28 | Window Evictors
+
+# 29 | Window Function
+
+windowFunction, 其实就是 function on window, 比如 sum/max/min/process 等等。其中主要分为两种模式，一种是面向增量的，比如 sum/max/min，一种是全量的，比如 process。
+
+![image-20210516192121466](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516192121466.png)
+
+先说一下面向增量部分的：AggregateFunction
+
+![image-20210516192154546](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516192154546.png)
+
+这种结合我们上面提到过的 append 模式一起看，就知道其方向所在了。这个是对于 window 之中的部分增量数据进行处理，从而不断的产生 output。下游将这些 output 进行整合统一之后生成对应的结果。
+
+再看一个面向全量部分的：WindowProcessFunction
+
+![image-20210516192334963](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516192334963.png)
+
+这部分就是对于window 之中的全量数据进行一定的处理，相对来说更耗费性能，但是这种模式下面可以拿到 window 的一些元数据，比如窗口的元数据，名称和 size，有时候可能会需要这些信息来进行相应的处理，其灵活性更强。
+
+**WindowFunction 分类：**
+
+• ReduceFunction （Incremental ） 这种 function 是输入两个元素，输出一个元素。其输出元素的类型和两个输入元素的类型要相同。
+
+• AggregateFunction （ Incremental ） ：聚合 function，对某个范围内的数据进行一个聚合性质的分析，官方的例子是求取一段时间之内的平均数。
+
+• FoldFunction (Incremental)
+
+• ProcessWindowFunction （All Element）
+
+**AggregateFunction**
+
+![image-20210516193207692](../img/2021-05-01-FlinkDataStream 实践原理/image-20210516193207692.png)
+
+其中主要是4个方法，前面三个`createAccumulator`, `add`和`getResult`都是对于function 本身的定义，第一个创建 Accumulator，第二个累加和第三个得到相应的结果。最后一个 merge() 的存在，是因为有可能不同的数据被分配到不同的线程甚至机器上面进行执行，那么如何将这些不同机器的结果进行综合，就是需要在`merge()`之中定义好的。在本例之中，是将结果进行累加，同时将 count 进行累加得到的。
+
+
+
