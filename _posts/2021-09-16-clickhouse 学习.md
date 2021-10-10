@@ -342,3 +342,80 @@ order by (id, sku_id);
 
 ## 4.5 ReplacingMergeTree
 
+ReplacingMergeTree 是 MergeTree 的一个子类，其在 MergeTree 上面加入了一个去重的功能。
+
+1. 去重时间
+   数据的去重只会在插入数据时候或者是数据合并的时候出现，合并会在未知的时间进行，所以直接查询的话很有可能还查到最近的重复数据
+
+2. 去重范围
+   对于分区表而言，其只能在分区内部进行去重，不能执行跨分区的去重。
+
+   > 所以说，不同分区的数据其还可能有重复的，这个是其能力限制。
+
+3. 怎么用？
+
+   ```sql
+   create table t_order_rmt(
+      id UInt32,
+   sku_id String,
+   total_amount Decimal(16,2) , create_time Datetime
+   ) engine =ReplacingMergeTree(create_time)
+     partition by toYYYYMMDD(create_time)
+     primary key (id)
+     order by (id, sku_id);
+   ```
+
+   在表定义之中的`ReplacingMergeTree`的括号之中就是版本列， key 判断的根据是**order by之中的列**。
+
+   重复数据的话，会保留版本数据最大的一个（此处是 create_time最大的行），如果不填写版本字段的话，默认会按照插入的顺序保留最后一条。
+
+4. 小结论
+
+   1. 其使用 order by 作为唯一键
+   2. **去重是不可以跨分区的**
+   3. 同一批插入，或者是合并分区的时候才会进行去重
+
+## 4.6 SummingMergeTree
+
+应对只关心维度来进行汇总聚合结果的场景。
+
+```sql
+create table t_order_smt(
+   id UInt32,
+   sku_id String,
+   total_amount Decimal(16,2) ,
+   create_time Datetime
+) engine =SummingMergeTree(total_amount)
+  partition by toYYYYMMDD(create_time)
+  primary key (id)
+  order by (id,sku_id );
+```
+
+ 举个例子。
+
+1. `SummingMergeTree()`之中指定的列是汇总数据列，可以填写多个**数字列**，如果不填，以所有非维度列（不是 order by 的列）且为数字列作为汇总数据列。
+2. 以`order by`的列为准作为维度列
+3. 其他的列，按照插入顺序来保留**第一行**。
+4. 只会聚合**同一个分区**的数据
+5. 只有在同一批次插入，或者是分片合并时候才会进行聚合操作。
+
+**开发建议**
+
+设计聚合表的时候，唯一键值，流水号等等都可以去掉，所有的字段全都是：
+
+1. 维度
+2. 度量
+3. 时间戳（用来标记版本）
+
+**问：那么查询的时候可以直接查来获取其汇总值吗？**
+
+可以直接?
+
+`select total_amount from XXX where province_name=’’ and create_date=’xxx’`
+
+当然不行，其中可能会包含一些还没来得及聚合的明细，如果要汇总值，还是需要使用 sum 来进行聚合。
+
+要用：
+
+`select sum(total_amount) from province_name=’’ and create_date=‘xxx’`
+
