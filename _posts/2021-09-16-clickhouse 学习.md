@@ -419,3 +419,126 @@ create table t_order_smt(
 
 `select sum(total_amount) from province_name=’’ and create_date=‘xxx’`
 
+# 第5章 SQL操作
+
+## 5.1 Insert
+
+基本与标准 SQL(MySQL)基本一致 
+
+**(1)标准**
+insert into [table_name] values(...),(....) 
+
+**(2)从表到表的插入**
+insert into [table_name] select a,b,c from [table_name_2]
+
+## 5.2 Update 和 Delete
+
+Clickhouse提供了 delete 和 update，但是其操作被称为 mutation 查询，也就是突变查询。mutation 语句是一种很重的操作，而且整个 clickhouse 并不支持事务操作。
+
+其”重“是因为每次更新和删除数据，实际上都是新建一个分区然后将原有分区的内容+修改之后放到新的分区之中。所以如果非要修改的话，尽量批量变更。
+
+> 本身其并不是真的删了或者修改数据，而是新建一个新的分区给用户用，老分区老数据在修改的当下并不会被删除或者修改。
+>
+> 从其语句也能看出来，不是简单的 update 或者 delete，而是`alter table xxx delete/update xxx `
+
+**(1)删除操作**
+`alter table t_order_smt delete where sku_id ='sku_001';
+`
+
+**(2)修改操作**
+` alter table t_order_smt update total_amount=toDecimal32(2000.00,2) where id=102;`
+
+> hive 的更新操作是使用 insert overwrite,其效率也很低
+
+### 5.2.1 join 操作相关处理
+
+再讲一下，在 clickhouse 之中，**所有的 join 操作都是先将 A join B 里面右边的表加载到内存之中再去和左边进行 join**。所以如果要做 join 操作，右边最好是小表。
+
+因为 join 本身是在内存之中进行操作，所以如果是分布式表，其还需要进行广播，也就是如果 B 有 n 个节点，A 有 m 个节点，那么要广播 m*n 次再在内存之中进行处理。
+
+## 5.3 查询操作
+
+相对于标准 sql，其差别不大
+
+➢ 支持子查询
+➢ 支持 CTE(Common Table Expression 公用表表达式 with 子句)
+
+> CTE可以看作是一个临时的结果集，可以在接下来的**一个**SELECT,INSERT,UPDATE,DELETE,MERGE语句中被多次引用。使用公用表达式可以让语句更加清晰简练.
+>
+> 注意，只是在接下来的**一个**语句之中使用。
+>
+>   公用表达式的定义非常简单，只包含三部分：
+>
+> 1.  公用表表达式的名字（在WITH之后）
+> 2.  所涉及的列名（可选）
+> 3.  一个SELECT语句(紧跟AS之后)
+>
+>   在MSDN中的原型：
+>
+> ```sql
+> WITH expression_name [ ( column_name [,...n] ) ] 
+> 
+> AS 
+> 
+> ( CTE_query_definition ) 
+> ```
+>
+> https://www.cnblogs.com/careyson/archive/2011/12/12/2284740.html
+
+➢ 支持各种JOIN，但是JOIN操作无法使用缓存，所以即使是两次相同的JOIN语句，
+ClickHouse 也会视为**两条新 SQL**
+
+➢ 窗口函数(官方正在测试中...)
+
+➢ 不支持自定义函数
+
+> 官方已经给了足够多的函数来使用
+
+➢ GROUP BY 操作增加了 with rollup\with cube\with total 用来计算小计和总计。
+
+1. Rollup: 从右到左去掉维度进行统计
+   如果有 a,b,c 三个维度，那么就是 a,b,c; a,b; a 这样
+   这种方式的削减，可以在每次查询时尽量使用到上一次的结果，减少资源的浪费
+
+   > ` hadoop102 :) select id , sku_id,sum(total_amount) from t_order_mt group by id,sku_id with rollup;`
+   >
+   > ![image-20211014111811300](../img/2021-09-16-clickhouse 学习/image-20211014111811300.png)
+
+2. Cube: 将所有维度进行全排列
+
+   > `hadoop102 :) select id , sku_id,sum(total_amount) from t_order_mt group by id,sku_id with cube;`
+   >
+   > ![image-20211014111911055](../img/2021-09-16-clickhouse 学习/image-20211014111911055.png)
+
+3. Totals: 只计算合计
+
+   > ` hadoop102 :) select id , sku_id,sum(total_amount) from t_order_mt group by id,sku_id with totals;`
+   >
+   > ![image-20211014111950468](../img/2021-09-16-clickhouse 学习/image-20211014111950468.png)
+   >
+   > 可以从图中看出其只有一个明细和一个总计。
+
+## 5.4 alter 操作
+
+1)新增字段
+`alter table tableName add column newcolname String after col1;
+`
+
+2)修改字段类型
+`alter table tableName modify column newcolname String;
+`
+
+3)删除字段
+`alter table tableName drop column newcolname;`
+
+## 5.5 导出数据
+
+```bash
+clickhouse-client --query "select * from t_order_mt where
+create_time='2020-06-01 12:00:00'" --format CSVWithNames>
+/opt/module/data/rs1.csv
+```
+
+一般不会需要导出数据，因为clickhouse 之中本身就比较多的大宽表，导出没什么意义。
+
+# 第 6 章 副本
