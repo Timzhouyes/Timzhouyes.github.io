@@ -542,3 +542,109 @@ create_time='2020-06-01 12:00:00'" --format CSVWithNames>
 一般不会需要导出数据，因为clickhouse 之中本身就比较多的大宽表，导出没什么意义。
 
 # 第 6 章 副本
+
+副本的目的是保障数据的高可用性。
+
+## 6.1 副本写入流程
+
+![image-20211107100540213](../img/2021-09-16-clickhouse 学习/image-20211107100540213.png)
+
+clickhouse 对于zk 是有强依赖的，意味着其副本之间数据的同步都是通过 zk 实现的。
+
+**副本之间并不存在主从关系！！**
+
+> 如果zk 集群失效了会怎么样？比如 timeout 这种？
+>
+> 有两种可能性，一种是直接提示 timeout，另外一种是可能会报 readony。readonly 的原因是因为 zk 集群失效了，所以此时各个副本之间的同步失败，不可以写入，只能读取。
+
+# 第 7 章 分片集群
+
+副本只是解决了**同样一份数据的丢失风险**，但是每台机器上面都还是要容纳全量数据的，对数据的*横向扩容*并没有解决。
+
+但是引入分片的概念之后，就可以对于同样一份数据做切分，分别打到不同节点上面，再通过 distributed 引擎来将数据拼接起来一起使用。
+
+Distributed 引擎本身并不存储任何数据，其只是用来**写入，分发，路由**来操作多台节点不同分片的分布式数据。
+
+> 那么分片没有坏处吗？
+>
+> 当然有的，分片将数据分散在不同机器上面，那么其查询性能自然而然就会降低，集群的复杂度也会升高。
+
+## 7.1 集群写入流程
+
+![image-20211107101513843](../img/2021-09-16-clickhouse 学习/image-20211107101513843.png)
+
+上面这个例子。
+
+`internal_replication` 意味着在集群内部节点上面是否开启同步。如果 false，那么需要 distributed 引擎在**每个节点**上面都做相应的操作，其负载会很大。因此，只要机器性能允许，一般我们都会在生产环境开启这个选项，让其**副本之间互相同步**。
+
+## 7.2 集群读取流程
+
+![image-20211107101914703](../img/2021-09-16-clickhouse 学习/image-20211107101914703.png)
+
+1. 集群内部维护一张 `errors_count` 表，用来记录每个节点访问错误的次数。
+2. 在 `errors_count`相同的情况下，有四种选择方式：随机，顺序，随机（优先第一顺位），host 名称近似。
+
+> 为什么 host 名称近似要在考量范围之中？
+>
+> host 名称近似，意味着其很有可能处在相同的网络环境之中，那么其数据读取速度就会更快。
+
+## 7.4 配置三节点版本集群及副本
+
+![image-20211107102351745](../img/2021-09-16-clickhouse 学习/image-20211107102351745.png)
+
+### 7.4.2 配置步骤
+
+```xml
+<?xml version="1.0"?>
+<yandex>
+    <remote_servers>
+        <gmall_cluster> <!-- 集群名称-->
+            <shard> <!--集群的第一个分片-->
+                <internal_replication>true</internal_replication>
+                <replica> <!--该分片的第一个副本-->
+                    <host>hadoop102</host>
+                    <port>9000</port>
+                </replica>
+                <replica> <!--该分片的第二个副本-->
+                    <host>hadoop103</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+            <shard> <!--集群的第二个分片-->
+                <internal_replication>true</internal_replication>
+                <replica> <!--该分片的第一个副本-->
+                    <host>hadoop104</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </gmall_cluster>
+    </remote_servers>
+    <zookeeper-servers>
+        <node index="1">
+            <host>hadoop102</host>
+            <port>2181</port>
+        </node>
+        <node index="2">
+            <host>hadoop103</host>
+            <port>2181</port>
+        </node>
+        <node index="3">
+            <host>hadoop104</host>
+            <port>2181</port>
+        </node>
+    </zookeeper-servers>
+    <macros>
+        <shard>01</shard> <!--不同机器放的分片数不一样-->
+        <replica>rep_1_1</replica> <!--不同机器放的副本数不一样-->
+    </macros>
+</yandex>
+```
+
+macros 这个项是用来指定我们要引入的参数，比如：
+
+```bash
+/clickhouse/tables/{shard}/st_order_mt','{replica}
+```
+
+ 之中的 shard 和 replica。
+
