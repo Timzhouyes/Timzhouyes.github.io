@@ -15,7 +15,7 @@ tags:								#标签
 
 Before version 20.6, if we need to get execution plan we need look into the logs, from 20.6 we can use `explain` to get execution plan.
 
-## 1.1 Basic grammar
+## 1.1 Basic syntax
 
 Refer: https://clickhouse.com/docs/en/sql-reference/statements/explain
 
@@ -29,7 +29,7 @@ There are 4 types for explaining:
    - Header: Default 0, can show the type of all parameters
    - Description: Default 1, show step-by-step description for the execution plan
    - Actions: Default 0, show detailed information of all steps
-2. AST: Show grammar tree for execution plan
+2. AST: Show syntax tree for execution plan
 3. SYNTAX: Show optimized grammer for execution plan
 4. PIPELINE: Will show detailed information, like how many threads did the work
 
@@ -85,7 +85,7 @@ Above is the SQL for query in system database, and here is the result:
 
 Step sequence is from the bottom to the top.
 
-3. **AST grammar tree**
+3. **AST syntax tree**
 
 ```sql
 EXPLAIN AST SELECT number from system.numbers limit 10;
@@ -106,7 +106,7 @@ EXPLAIN AST SELECT number from system.numbers limit 10;
 └─────────────────────────────────────────────┘
 ```
 
-4. **SYNTAX grammar optimization **
+4. **SYNTAX syntax optimization **
    Below is the example for before and after opening conditional operator(三目运算符)
 
    ```sql
@@ -325,5 +325,252 @@ Clickhouse doesn't support the multi-path, which is like Hive can use different 
 
 Can use virtual disk group to improve, which one group contains a lot of disks to improve the read and write efficiency.
 
+# Chapter 3 Clickhouse syntax optimisation
 
+As summary, clickhouse for syntax optimisation is not really powerful.
+
+## 3.2 Optimisation of count
+
+If we use `count()` but without `where` condition, then will use `total_rows` of `system.tables`.
+
+```sql
+EXPLAIN SELECT count()FROM datasets.hits_v1;
+
+Union
+  Expression (Projection)
+   Expression (Before ORDER BY and SELECT)
+     MergingAggregated
+       ReadNothing (Optimized trivial count)
+```
+
+Can see `Optimized trivial count` here, it is optimisation of count.
+
+But if we count by specific column, then won't use optimisation.
+
+```sql
+EXPLAIN SELECT count(CounterID) FROM datasets.hits_v1;
+Union
+  Expression (Projection)
+   Expression (Before ORDER BY and SELECT)
+     Aggregating
+       Expression (Before GROUP BY)
+        ReadFromStorage (Read from MergeTree)
+```
+
+Can see `read from mergeTree`, showed it really read the data.
+
+**Also, Clickhouse will optimise the `count(1) and `count(\*) as `count()`**
+
+## 3.3 Delete the duplicated column for query
+
+Even rename the duplicated column, it still will be remove until only one left.
+
+```sql
+EXPLAIN SYNTAX SELECT
+  a.UserID,
+  b.VisitID,
+  a.URL,
+  b.UserID
+FROM
+  hits_v1 AS a
+  LEFT JOIN (
+   SELECT
+     UserID,
+     UserID as HaHa,
+     VisitID
+   FROM visits_v1) AS b
+  USING (UserID)
+  limit 3;
+  
+//After optimisation: 
+SELECT
+   UserID,
+   VisitID,
+   URL,
+   b.UserID
+   FROM hits_v1 AS a
+ALL LEFT JOIN
+(
+   SELECT
+       UserID,
+       VisitID
+   FROM visits_v1
+) AS b USING (UserID)
+LIMIT 3
+```
+
+Even we rename UserID as HaHa, it still cannot duplicate.
+
+## 3.4 Predicate pushdown(谓词下推)
+
+> **Difference between `having` and `where`**
+>
+> `Having` is after the query result come out then do filter for this query, and `where` is when querying the result then will be executed.
+
+Clickhouse will change `having` to `where` for filter the result during query.
+
+```sql
+EXPLAIN SYNTAX SELECT UserID FROM hits_v1 GROUP BY UserID HAVING UserID =
+'8585742290196126178';
+
+
+SELECT UserID
+FROM hits_v1
+WHERE UserID = \'8585742290196126178\' 
+GROUP BY UserID
+```
+
+Can see `having` disappeared,  and replaced by `where`
+
+## 3.5 Aggregate calculation extrapolation(聚合计算外推)
+
+Caculation in aggregating will be extrapolated
+
+```sql
+EXPLAIN SYNTAX
+SELECT sum(UserID * 2)
+FROM visits_v1
+
+SELECT sum(UserID) * 2
+FROM visits_v1
+```
+
+In example, `sum(UserId * 2)` changed to `sum(UserID) * 2`
+
+## 3.6 Remove functions for aggregated keys
+
+If we use functions, like `min`, `max ` for aggregated keys, it will remove these functions.
+
+> Like if we want to group by grade, so in one group all grade will be the same, then why do we still need to use `max` or `min` for them?
+>
+> But for some functions like `sum` , it will be kept because sum for one group has meaning, even hardly will be used in business
+
+```sql
+EXPLAIN SYNTAX
+SELECT
+   sum(UserID * 2),
+   max(VisitID),
+   max(UserID)
+FROM visits_v1
+GROUP BY UserID;
+
+SELECT
+   sum(UserID) * 2,
+   max(VisitID),
+UserID
+FROM visits_v1
+GROUP BY UserID
+
+```
+
+## 3.7 Remove duplication for `limit by`, `using ` or  `order by`
+
+For these 3 cases, this optimisation meanly to avoid users write their sql query carelessly, like write something twice in condition. For performance, no such really improment.
+
+**Order by**
+
+```sql
+EXPLAIN SYNTAX
+SELECT *
+FROM visits_v1
+ORDER BY
+   UserID ASC,
+   UserID ASC,
+   VisitID ASC,
+   VisitID ASC
+ 
+
+select
+    ......
+FROM visits_v1
+ORDER BY
+   UserID ASC,
+   VisitID ASC
+```
+
+**limit by**
+
+```sql
+EXPLAIN SYNTAX
+SELECT *
+FROM visits_v1
+LIMIT 3 BY
+VisitID,
+   VisitID
+LIMIT 10
+
+
+select ......
+FROM visits_v1
+LIMIT 3 BY VisitID
+LIMIT 10
+```
+
+**Using**
+
+```sql
+EXPLAIN SYNTAX
+SELECT
+   a.UserID,
+   a.UserID,
+   b.VisitID,
+   a.URL,
+   b.UserID
+   FROM hits_v1 AS a
+LEFT JOIN visits_v1 AS b USING (UserID, UserID)
+
+SELECT
+   UserID,
+   UserID,
+   VisitID,
+   URL,
+   b.UserID
+FROM hits_v1 AS a
+ALL LEFT JOIN visits_v1 AS b USING (UserID)
+```
+
+## 3.10 Scalar replacement
+
+if the subquery only return one result, then when be referred will be replaced by scalar, for example the `total_disk_usage` column:
+
+```sql
+EXPLAIN SYNTAX
+WITH
+   (
+       SELECT sum(bytes)
+       FROM system.parts
+       WHERE active
+   ) AS total_disk_usage
+SELECT
+   (sum(bytes) / total_disk_usage) * 100 AS table_disk_usage,
+   table
+FROM system.parts
+GROUP BY table
+ORDER BY table_disk_usage DESC
+LIMIT 10;
+
+
+WITH CAST(0, \'UInt64\') AS total_disk_usage 
+SELECT
+   (sum(bytes) / total_disk_usage) * 100 AS table_disk_usage,
+   table
+FROM system.parts
+GROUP BY table
+ORDER BY table_disk_usage DESC
+LIMIT 10
+```
+
+## 3.11 Conditional operator optimisation
+
+if `optimize_if_chain_to_multiif` is 1, then conditional operator will be replaced by `multiIf`.
+
+```sql
+EXPLAIN SYNTAX
+SELECT number = 1 ? 'hello' : (number = 2 ? 'world' : 'atguigu') FROM numbers(10)
+settings optimize_if_chain_to_multiif = 1;
+
+
+
+SELECT multiIf(number = 1, \'hello\', number = 2, \'world\', \'atguigu\') FROM numbers(10)
+```
 
