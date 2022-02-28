@@ -101,6 +101,80 @@ Easymock中。标示要测试的类，powermock会将mock的类注入其中。
 
 
 
+# 例子
+
+## 内部组件的注入
+
+用`setInternalState()`
+
+```java
+	/**
+	 * Set the value of a field using reflection. This method will traverse the
+	 * super class hierarchy until the first field assignable to the
+	 * <tt>value</tt> type is found. The <tt>value</tt> (or
+	 * <tt>additionaValues</tt> if present) will then be assigned to this field.
+	 * 
+	 * @param object
+	 *            the object to modify
+	 * @param value
+	 *            the new value of the field
+	 * @param additionalValues
+	 *            Additional values to set on the object
+	 */
+	public static void setInternalState(Object object, Object value, Object... additionalValues) {
+		WhiteboxImpl.setInternalState(object, value, additionalValues);
+	}
+```
+
+举例：将bundleContextMock 注入到 tested之中：
+
+```java
+        setInternalState(tested, bundleContextMock);
+```
+
+## void类型的取值和验证
+
+函数的返回值是void, 没法`expect...andReturn`，用下面的方式：
+
+```java
+       // TODO Expect the call to serviceRegistrationMock.unregister()
+			// 此处的 serviceRegistrationMock.unregister() 返回void
+        serviceRegistrationMock.unregister();
+        PowerMock.expectLastCall().times(1);
+```
+
+## 抛出和检验异常
+
+被测试方法：
+
+```java
+	@Override
+	public void unregisterService(long id) {
+		final ServiceRegistration registration = serviceRegistrations.remove(id);
+		if (registration == null) {
+			throw new IllegalStateException("Registration with id " + id + " has already been removed or has never been registered");
+		}
+		registration.unregister();
+	}
+```
+
+如何测试：用`fail()`
+
+```java
+ // TODO Expect the call to serviceRegistrationMock.unregister() and throw an IllegalStateException
+        try{
+            tested.unregisterService(id);
+            fail("Here should throw Exception....");
+        }catch (IllegalStateException e){
+            assertEquals("Registration with id " + id + " has already been removed or has never been registered", e.getMessage());
+        }
+
+```
+
+
+
+
+
 # 在运行时候发生`org.objenesis.ObjenesisException: java.lang.reflect.InvocationTargetException`
 
 详细报错是：可以看到主要是因为`java.lang.reflect.InvocationTargetException`.
