@@ -115,7 +115,64 @@ Easymock中。标示要测试的类，powermock会将mock的类注入其中。
 	}
 ```
 
+## expectNew
 
+也包括一系列的相关方法，比如`createMockAndExpectNew`等等。
+
+
+
+```java
+
+    /**
+     * Convenience method for createMock followed by expectNew.
+     *
+     * @param type      The class that should be mocked.
+     * @param arguments The constructor arguments.
+     * @return A mock object of the same type as the mock.
+     * @throws Exception
+     */
+    public static synchronized <T> T createMockAndExpectNew(Class<T> type, Object... arguments) throws Exception {
+        T mock = createMock(type);
+        expectNew(type, arguments).andReturn(mock);
+        return mock;
+    }
+
+
+    /**
+     * Allows specifying expectations on new invocations. For example you might
+     * want to throw an exception or return a mock. Note that you must replay
+     * the class when using this method since this behavior is part of the class
+     * mock.
+     */
+    public static synchronized <T> IExpectationSetters<T> expectNew(Class<T> type, Object... arguments)
+            throws Exception {
+        return doExpectNew(type, new DefaultMockStrategy(), null, arguments);
+    }
+```
+
+用在被测试方法之中有new相关的调用，比如：
+
+```java
+
+	@Override
+	public boolean createPerson(String firstName, String lastName) {
+		BusinessMessages messages = new BusinessMessages();
+		Person person = null;
+		try {
+			person = new Person(firstName, lastName);
+		} catch (IllegalArgumentException e) {
+			throw new SampleServiceException(e.getMessage(), e);
+	
+```
+
+里面对于messages是`new BusinessMessages`，所以要：
+
+```java
+		// Mock the creation of BusinessMessages
+		BusinessMessages businessMessagesMock = createMockAndExpectNew(BusinessMessages.class);
+```
+
+而不是单纯的直接Mock一个对象插进去（因为被测试方法之中是有自己的new创建对象而非直接使用类已有对象）
 
 # 例子
 
