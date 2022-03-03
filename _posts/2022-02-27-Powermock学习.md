@@ -99,6 +99,22 @@ expect(finalClass.sayHello()).andReturn(value);
 
 Easymock中。标示要测试的类，powermock会将mock的类注入其中。
 
+## invokeMethod
+
+用来测试private的method，或者是内部类的method
+
+```java
+
+	/**
+	 * Invoke a private or inner class method. This might be useful to test
+	 * private methods.
+	 */
+	public static synchronized <T> T invokeMethod(Object instance, String methodToExecute, Object... arguments)
+			throws Exception {
+		return WhiteboxImpl.invokeMethod(instance, methodToExecute, arguments);
+	}
+```
+
 
 
 # 例子
