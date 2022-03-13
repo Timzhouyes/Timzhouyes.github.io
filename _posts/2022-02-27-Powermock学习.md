@@ -324,3 +324,87 @@ Caused by: java.lang.IllegalAccessError: class jdk.internal.reflect.ConstructorA
 	... 33 more
 ```
 
+# Powermock在jdk11之中不匹配
+
+主要是如下的报错，显示	`org.powermock.core.classloader.MockClassLoader` 无法访问`jdk/internal/reflect superclass jdk.internal.reflect.MagicAccessorImpl`
+
+解决方法：添加`@PowerMockIgnore("jdk.internal.reflect.*")`
+
+为什么可以解决：
+
+没找到 jdk11之中的解释，但是找到了 jdk9 之中对于这个的官方maintainer回答，就是 powermock 本身对于新版本的 jdk支持不好，导致其自定义的类加载器中找不到某些类：
+
+https://github.com/powermock/powermock/issues/864
+
+![image-20220313154901902](/Users/sg00146ml/Library/Application Support/typora-user-images/image-20220313154901902.png)
+
+
+
+
+
+具体报错如下：
+
+```java
+org.objenesis.ObjenesisException: java.lang.reflect.InvocationTargetException
+
+	at org.objenesis.instantiator.sun.SunReflectionFactoryHelper.newConstructorForSerialization(SunReflectionFactoryHelper.java:54)
+	at org.objenesis.instantiator.sun.SunReflectionFactoryInstantiator.<init>(SunReflectionFactoryInstantiator.java:38)
+	at org.objenesis.strategy.StdInstantiatorStrategy.newInstantiatorOf(StdInstantiatorStrategy.java:68)
+	at org.objenesis.ObjenesisBase.getInstantiatorOf(ObjenesisBase.java:91)
+	at org.powermock.reflect.internal.WhiteboxImpl.newInstance(WhiteboxImpl.java:259)
+	at org.powermock.reflect.Whitebox.newInstance(Whitebox.java:139)
+	at org.powermock.tests.utils.impl.AbstractTestSuiteChunkerImpl.getPowerMockTestListenersLoadedByASpecificClassLoader(AbstractTestSuiteChunkerImpl.java:95)
+	at org.powermock.modules.junit4.common.internal.impl.JUnit4TestSuiteChunkerImpl.createDelegatorFromClassloader(JUnit4TestSuiteChunkerImpl.java:174)
+	at org.powermock.modules.junit4.common.internal.impl.JUnit4TestSuiteChunkerImpl.createDelegatorFromClassloader(JUnit4TestSuiteChunkerImpl.java:48)
+	at org.powermock.tests.utils.impl.AbstractTestSuiteChunkerImpl.createTestDelegators(AbstractTestSuiteChunkerImpl.java:108)
+	at org.powermock.modules.junit4.common.internal.impl.JUnit4TestSuiteChunkerImpl.<init>(JUnit4TestSuiteChunkerImpl.java:71)
+	at org.powermock.modules.junit4.common.internal.impl.AbstractCommonPowerMockRunner.<init>(AbstractCommonPowerMockRunner.java:36)
+	at org.powermock.modules.junit4.PowerMockRunner.<init>(PowerMockRunner.java:34)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:490)
+	at org.junit.internal.requests.ClassRequest.buildRunner(ClassRequest.java:33)
+	at org.junit.internal.requests.ClassRequest.getRunner(ClassRequest.java:28)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:50)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater$1.execute(IdeaTestRunner.java:38)
+	at com.intellij.rt.execution.junit.TestsRepeater.repeat(TestsRepeater.java:11)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:35)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:235)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:54)
+Caused by: java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+	at org.objenesis.instantiator.sun.SunReflectionFactoryHelper.newConstructorForSerialization(SunReflectionFactoryHelper.java:44)
+	... 24 more
+Caused by: java.lang.IllegalAccessError: class jdk.internal.reflect.ConstructorAccessorImpl loaded by org.powermock.core.classloader.MockClassLoader @6043cd28 cannot access jdk/internal/reflect superclass jdk.internal.reflect.MagicAccessorImpl
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1017)
+	at org.powermock.core.classloader.MockClassLoader.loadUnmockedClass(MockClassLoader.java:262)
+	at org.powermock.core.classloader.MockClassLoader.loadModifiedClass(MockClassLoader.java:206)
+	at org.powermock.core.classloader.DeferSupportingClassLoader.loadClass1(DeferSupportingClassLoader.java:89)
+	at org.powermock.core.classloader.DeferSupportingClassLoader.loadClass(DeferSupportingClassLoader.java:79)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method)
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1017)
+	at org.powermock.core.classloader.MockClassLoader.loadUnmockedClass(MockClassLoader.java:262)
+	at org.powermock.core.classloader.MockClassLoader.loadModifiedClass(MockClassLoader.java:206)
+	at org.powermock.core.classloader.DeferSupportingClassLoader.loadClass1(DeferSupportingClassLoader.java:89)
+	at org.powermock.core.classloader.DeferSupportingClassLoader.loadClass(DeferSupportingClassLoader.java:79)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:522)
+	at java.base/jdk.internal.misc.Unsafe.defineClass0(Native Method)
+	at java.base/jdk.internal.misc.Unsafe.defineClass(Unsafe.java:1192)
+	at java.base/jdk.internal.reflect.ClassDefiner.defineClass(ClassDefiner.java:63)
+	at java.base/jdk.internal.reflect.MethodAccessorGenerator$1.run(MethodAccessorGenerator.java:400)
+	at java.base/jdk.internal.reflect.MethodAccessorGenerator$1.run(MethodAccessorGenerator.java:394)
+	at java.base/java.security.AccessController.doPrivileged(Native Method)
+	at java.base/jdk.internal.reflect.MethodAccessorGenerator.generate(MethodAccessorGenerator.java:393)
+	at java.base/jdk.internal.reflect.MethodAccessorGenerator.generateSerializationConstructor(MethodAccessorGenerator.java:112)
+	at java.base/jdk.internal.reflect.ReflectionFactory.generateConstructor(ReflectionFactory.java:514)
+	at java.base/jdk.internal.reflect.ReflectionFactory.newConstructorForSerialization(ReflectionFactory.java:427)
+	at jdk.unsupported/sun.reflect.ReflectionFactory.newConstructorForSerialization(ReflectionFactory.java:103)
+	... 29 more
+```
+
