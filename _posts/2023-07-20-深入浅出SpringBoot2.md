@@ -334,10 +334,7 @@ mybatis.type-handlers-package=com.example.chapter5.typehandler
 logging.level.root=DEBUG
 logging.level.org.springframework.web=DEBUG
 logging.level.org.mybatis=DEBUG
-
 ```
-
-
 
 如果去掉了驱动类的配置，spring boot会先尽可能去判断数据类型且按照默认情况匹配驱动类。可见最好还是加入。
 
@@ -365,8 +362,6 @@ JPA 维护的核心就是 **entity**，通过持久化上下文使用(persistenc
 
 3. 查询语言：面向对象的查询语言 JPQL，实现比较灵活的查询。
 
-
-
 JPA部分，可以使用注解来标明各种属性，主键策略，对应转换器（比如Enum的场景）等等。
 
 如果接口已经继承了JpaRepository, 那么就会有系统默认实现的方法，比如一些查询,`findById()` 等等。
@@ -376,21 +371,21 @@ JPA部分，可以使用注解来标明各种属性，主键策略，对应转�
 1. 使用 `@Query` 来标识语句，在方法的上面进行注解式的开发
 
 ```java
-	@Query("from user where user_name like concat('%', ?1, '%') " 
+    @Query("from user where user_name like concat('%', ?1, '%') " 
         + "and note like concat('', ?2, '%')")
-	public List<User> findUsers(String userName, String note);
+    public List<User> findUsers(String userName, String note);
 ```
 
 2. JPA 也可以用一定规则命名方法直接完成逻辑，比如
 
 ```java
-	/**
-	 * 按照用户名称或者备注进行模糊查询
-	 * @param userName 用户名
-	 * @param note 备注
-	 * @return 用户列表
-	 */
-	List<User> findByUserNameLikeOrNoteLike(String userName, String note);
+    /**
+     * 按照用户名称或者备注进行模糊查询
+     * @param userName 用户名
+     * @param note 备注
+     * @return 用户列表
+     */
+    List<User> findByUserNameLikeOrNoteLike(String userName, String note);
 ```
 
 ## 5.4 整合MyBatis 框架
@@ -493,10 +488,7 @@ public class User {
         this.note = note;
     }
 }
-
 ```
-
-
 
 #### typeHandler例子
 
@@ -552,7 +544,6 @@ public class SexTypeHandler extends BaseTypeHandler<SexEnum> {
         return SexEnum.getEnumById(sex);
     }
 }
-
 ```
 
 ### 5.4.3 spring boot 整合 mybatis
@@ -569,10 +560,7 @@ public class Chapter5Application {
     }
 
 }
-
 ```
-
-
 
 注意：下面是myBatis 源码对 `sqlSessionTemplateRef` 和 `sqlSessionFactoryRef` 的说明，一般是在多于一个数据源的情况下使用的：
 
@@ -593,8 +581,6 @@ public class Chapter5Application {
 ```
 
 sqlSessionTemplateRef 的优先权是大于 sqlSessionFactoryRef 的。
-
-
 
 # 第6章 聊聊数据库事务处理
 
@@ -620,7 +606,7 @@ sqlSessionTemplateRef 的优先权是大于 sqlSessionFactoryRef 的。
 
 spring 使用 AOP 提供了一个数据库事务的约定流程。声明式事务而言，是通过 `@Transactional` 来进行标注的。
 
-**用在类上面**: 这个类之中所有的public ， 非static 方法都会启用事务功能
+**用在类上面**: 这个类之中所有的**public ， 非static 方法**都会启用事务功能
 
 还允许配置很多的属性，比如事务的隔离级别，传播行为；在什么异常情况下回滚等等。
 
@@ -631,3 +617,272 @@ spring 使用 AOP 提供了一个数据库事务的约定流程。声明式事�
 **我们要做什么：** 仅仅需要使用 @Transactional 进行配置而已
 
 ![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-09-05-17-49-54-image.png)
+
+### 6.2.2 @Transactional 的配置项
+
+```java
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+public @interface Transactional {
+
+    /**
+     * Alias for {@link #transactionManager}.
+     * @see #transactionManager
+     */
+    @AliasFor("transactionManager")
+    String value() default "";
+
+    /**
+     * A <em>qualifier</em> value for the specified transaction.
+     * <p>May be used to determine the target transaction manager,
+     * matching the qualifier value (or the bean name) of a specific
+     * {@link org.springframework.transaction.PlatformTransactionManager}
+     * bean definition.
+     * @since 4.2
+     * @see #value
+     */
+    // 通过bean name指定事务管理器
+    @AliasFor("value")
+    String transactionManager() default "";
+
+    /**
+     * The transaction propagation type.
+     * <p>Defaults to {@link Propagation#REQUIRED}.
+     * @see org.springframework.transaction.interceptor.TransactionAttribute#getPropagationBehavior()
+     */
+    // 和value 一样属性
+    Propagation propagation() default Propagation.REQUIRED;
+
+    /**
+     * The transaction isolation level.
+     * <p>Defaults to {@link Isolation#DEFAULT}.
+     * <p>Exclusively designed for use with {@link Propagation#REQUIRED} or
+     * {@link Propagation#REQUIRES_NEW} since it only applies to newly started
+     * transactions. Consider switching the "validateExistingTransactions" flag to
+     * "true" on your transaction manager if you'd like isolation level declarations
+     * to get rejected when participating in an existing transaction with a different
+     * isolation level.
+     * @see org.springframework.transaction.interceptor.TransactionAttribute#getIsolationLevel()
+     * @see org.springframework.transaction.support.AbstractPlatformTransactionManager#setValidateExistingTransaction
+     */
+    // 传播行为
+    Isolation isolation() default Isolation.DEFAULT;
+
+    /**
+     * The timeout for this transaction.
+     * <p>Defaults to the default timeout of the underlying transaction system.
+     * <p>Exclusively designed for use with {@link Propagation#REQUIRED} or
+     * {@link Propagation#REQUIRES_NEW} since it only applies to newly started
+     * transactions.
+     * @see org.springframework.transaction.interceptor.TransactionAttribute#getTimeout()
+     */
+    // 超时时间，单位秒
+    int timeout() default TransactionDefinition.TIMEOUT_DEFAULT;
+
+    /**
+     * A boolean flag that can be set to {@code true} if the transaction is
+     * effectively read-only, allowing for corresponding optimizations at runtime.
+     * <p>Defaults to {@code false}.
+     * <p>This just serves as a hint for the actual transaction subsystem;
+     * it will <i>not necessarily</i> cause failure of write access attempts.
+     * A transaction manager which cannot interpret the read-only hint will
+     * <i>not</i> throw an exception when asked for a read-only transaction
+     * but rather silently ignore the hint.
+     * @see org.springframework.transaction.interceptor.TransactionAttribute#isReadOnly()
+     * @see org.springframework.transaction.support.TransactionSynchronizationManager#isCurrentTransactionReadOnly()
+     */
+    // 是否为只读事务
+    boolean readOnly() default false;
+
+    /**
+     * Defines zero (0) or more exception {@link Class classes}, which must be
+     * subclasses of {@link Throwable}, indicating which exception types must cause
+     * a transaction rollback.
+     * <p>By default, a transaction will be rolling back on {@link RuntimeException}
+     * and {@link Error} but not on checked exceptions (business exceptions). See
+     * {@link org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn(Throwable)}
+     * for a detailed explanation.
+     * <p>This is the preferred way to construct a rollback rule (in contrast to
+     * {@link #rollbackForClassName}), matching the exception class and its subclasses.
+     * <p>Similar to {@link org.springframework.transaction.interceptor.RollbackRuleAttribute#RollbackRuleAttribute(Class clazz)}.
+     * @see #rollbackForClassName
+     * @see org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn(Throwable)
+     */
+    // 方法在发生指定异常时候回滚，默认回滚所有异常
+    Class<? extends Throwable>[] rollbackFor() default {};
+
+    /**
+     * Defines zero (0) or more exception names (for exceptions which must be a
+     * subclass of {@link Throwable}), indicating which exception types must cause
+     * a transaction rollback.
+     * <p>This can be a substring of a fully qualified class name, with no wildcard
+     * support at present. For example, a value of {@code "ServletException"} would
+     * match {@code javax.servlet.ServletException} and its subclasses.
+     * <p><b>NB:</b> Consider carefully how specific the pattern is and whether
+     * to include package information (which isn't mandatory). For example,
+     * {@code "Exception"} will match nearly anything and will probably hide other
+     * rules. {@code "java.lang.Exception"} would be correct if {@code "Exception"}
+     * were meant to define a rule for all checked exceptions. With more unusual
+     * {@link Exception} names such as {@code "BaseBusinessException"} there is no
+     * need to use a FQN.
+     * <p>Similar to {@link org.springframework.transaction.interceptor.RollbackRuleAttribute#RollbackRuleAttribute(String exceptionName)}.
+     * @see #rollbackFor
+     * @see org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn(Throwable)
+     */
+    // 方法发生指定异常类名时回滚，默认所有
+    String[] rollbackForClassName() default {};
+
+    /**
+     * Defines zero (0) or more exception {@link Class Classes}, which must be
+     * subclasses of {@link Throwable}, indicating which exception types must
+     * <b>not</b> cause a transaction rollback.
+     * <p>This is the preferred way to construct a rollback rule (in contrast
+     * to {@link #noRollbackForClassName}), matching the exception class and
+     * its subclasses.
+     * <p>Similar to {@link org.springframework.transaction.interceptor.NoRollbackRuleAttribute#NoRollbackRuleAttribute(Class clazz)}.
+     * @see #noRollbackForClassName
+     * @see org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn(Throwable)
+     */
+
+    Class<? extends Throwable>[] noRollbackFor() default {};
+
+    /**
+     * Defines zero (0) or more exception names (for exceptions which must be a
+     * subclass of {@link Throwable}) indicating which exception types must <b>not</b>
+     * cause a transaction rollback.
+     * <p>See the description of {@link #rollbackForClassName} for further
+     * information on how the specified names are treated.
+     * <p>Similar to {@link org.springframework.transaction.interceptor.NoRollbackRuleAttribute#NoRollbackRuleAttribute(String exceptionName)}.
+     * @see #noRollbackFor
+     * @see org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn(Throwable)
+     */
+    String[] noRollbackForClassName() default {};
+
+}
+```
+
+1. value 和 transactionManager 属性，是配置一个spring的**事务管理器**。
+
+2. `@Transactional` 最好放在实现类上面，spring推荐放在实现类的理由如下：
+   
+   > https://docs.spring.io/spring-framework/docs/5.0.x/spring-framework-reference/data-access.html#transaction-declarative-annotations
+   > 
+   > Spring recommends that you only annotate concrete classes (and methods of concrete classes) with the `@Transactional` annotation, as opposed to annotating interfaces. You certainly can place the `@Transactional` annotation on an interface (or an interface method), but this works only as you would expect it to if you are using interface-based proxies. The fact that Java annotations are *not inherited from interfaces* means that if you are using class-based proxies ( `proxy-target-class="true"`) or the weaving-based aspect ( `mode="aspectj"`), then the transaction settings are not recognized by the proxying and weaving infrastructure, and the object will not be wrapped in a transactional proxy, which would be decidedly *bad*.
+   
+   都按在类上，那么只用 class-based proxies 和 weaving-based（织入） aspect 就可以使用。
+   
+   作者在书中写 cglib 不允许接口代理，我认为是错误的。
+
+### 6.2.3 spring 事务管理器
+
+在spring之中，最顶层的事务管理器接口是 PlatformTransactionManager, 其继承关系图为：
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-09-29-17-41-04-image.png)
+
+对应方法可以简化为
+
+```java
+public interface PlatformTransactionManager {
+
+    /**
+     * Return a currently active transaction or create a new one, according to
+     * the specified propagation behavior.
+     * <p>Note that parameters like isolation level or timeout will only be applied
+     * to new transactions, and thus be ignored when participating in active ones.
+     * <p>Furthermore, not all transaction definition settings will be supported
+     * by every transaction manager: A proper transaction manager implementation
+     * should throw an exception when unsupported settings are encountered.
+     * <p>An exception to the above rule is the read-only flag, which should be
+     * ignored if no explicit read-only mode is supported. Essentially, the
+     * read-only flag is just a hint for potential optimization.
+     * @param definition TransactionDefinition instance (can be {@code null} for defaults),
+     * describing propagation behavior, isolation level, timeout etc.
+     * @return transaction status object representing the new or current transaction
+     * @throws TransactionException in case of lookup, creation, or system errors
+     * @throws IllegalTransactionStateException if the given transaction definition
+     * cannot be executed (for example, if a currently active transaction is in
+     * conflict with the specified propagation behavior)
+     * @see TransactionDefinition#getPropagationBehavior
+     * @see TransactionDefinition#getIsolationLevel
+     * @see TransactionDefinition#getTimeout
+     * @see TransactionDefinition#isReadOnly
+     */
+
+    // 设置数据属性和获取事务
+    TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException;
+
+    /**
+     * Commit the given transaction, with regard to its status. If the transaction
+     * has been marked rollback-only programmatically, perform a rollback.
+     * <p>If the transaction wasn't a new one, omit the commit for proper
+     * participation in the surrounding transaction. If a previous transaction
+     * has been suspended to be able to create a new one, resume the previous
+     * transaction after committing the new one.
+     * <p>Note that when the commit call completes, no matter if normally or
+     * throwing an exception, the transaction must be fully completed and
+     * cleaned up. No rollback call should be expected in such a case.
+     * <p>If this method throws an exception other than a TransactionException,
+     * then some before-commit error caused the commit attempt to fail. For
+     * example, an O/R Mapping tool might have tried to flush changes to the
+     * database right before commit, with the resulting DataAccessException
+     * causing the transaction to fail. The original exception will be
+     * propagated to the caller of this commit method in such a case.
+     * @param status object returned by the {@code getTransaction} method
+     * @throws UnexpectedRollbackException in case of an unexpected rollback
+     * that the transaction coordinator initiated
+     * @throws HeuristicCompletionException in case of a transaction failure
+     * caused by a heuristic decision on the side of the transaction coordinator
+     * @throws TransactionSystemException in case of commit or system errors
+     * (typically caused by fundamental resource failures)
+     * @throws IllegalTransactionStateException if the given transaction
+     * is already completed (that is, committed or rolled back)
+     * @see TransactionStatus#setRollbackOnly
+     */
+
+    // 提交事务
+    void commit(TransactionStatus status) throws TransactionException;
+
+    /**
+     * Perform a rollback of the given transaction.
+     * <p>If the transaction wasn't a new one, just set it rollback-only for proper
+     * participation in the surrounding transaction. If a previous transaction
+     * has been suspended to be able to create a new one, resume the previous
+     * transaction after rolling back the new one.
+     * <p><b>Do not call rollback on a transaction if commit threw an exception.</b>
+     * The transaction will already have been completed and cleaned up when commit
+     * returns, even in case of a commit exception. Consequently, a rollback call
+     * after commit failure will lead to an IllegalTransactionStateException.
+     * @param status object returned by the {@code getTransaction} method
+     * @throws TransactionSystemException in case of rollback or system errors
+     * (typically caused by fundamental resource failures)
+     * @throws IllegalTransactionStateException if the given transaction
+     * is already completed (that is, committed or rolled back)
+     */
+
+    // 获取事务
+    void rollback(TransactionStatus status) throws TransactionException;
+
+}
+```
+
+简要分析一下这三个方法：
+
+spring认为在一个事务之中，最基本的就是这三个方法，所以会按照约定的流程织入事务中。
+
+1. getTransaction 通过其参数之中的 TransactionDefinition 来获取对应的事务属性。其是依赖于 @Transactional 配置项生成，通过这个参数可以**设置事务属性**
+
+2. commit 提交，rollback 回滚，没什么说的
+
+#### **mybatis 依赖的是什么事务管理器？**
+
+是 DataSourceTransactionManager。 
+
+`org.springframework.jdbc.datasource.DataSourceTransactionManager`
+
+> 按照文档所说，这个manager可以适用于任何的JDBC driver
+> 
+> org.springframework.transaction.PlatformTransactionManager implementation for a single JDBC DataSource. This class is capable of working in any environment with any JDBC driver, as long as the setup uses a javax.sql.DataSource as its Connection factory mechanism. Binds a JDBC Connection from the specified DataSource to the current thread, potentially allowing for one thread-bound Connection per DataSource.
+
+下面是一张书中的截图， 
