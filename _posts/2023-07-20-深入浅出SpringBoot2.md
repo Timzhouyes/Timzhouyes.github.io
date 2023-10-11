@@ -885,4 +885,66 @@ spring认为在一个事务之中，最基本的就是这三个方法，所以�
 > 
 > org.springframework.transaction.PlatformTransactionManager implementation for a single JDBC DataSource. This class is capable of working in any environment with any JDBC driver, as long as the setup uses a javax.sql.DataSource as its Connection factory mechanism. Binds a JDBC Connection from the specified DataSource to the current thread, potentially allowing for one thread-bound Connection per DataSource.
 
-下面是一张书中的截图， 
+### 6.2.4 测试数据库事务
+
+下面是spring根据配置自动生成的事务管理器。
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-16-50-22-image.png)
+
+事务管理器其实就两条：
+
+1. 当事务正常发生的时候，帮助commit事务
+
+2. 当事务异常的时候，进行事务的回滚。
+
+对于一个事务，事务管理器debug的log：
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-16-57-37-image.png)
+
+1. 获取连接，修改连接的隔离级别
+
+2. 更改连接变为manual commit, 注意这边不是人来manual commit, 而是transactionManager帮我们commit
+
+3. 创建新的 sqlSession
+
+4. 准备语句，开始写入
+
+5. commit之后进行关闭sqlSession
+
+6. **将JdbcConnection 的隔离级别改回到4！ 你用完别人还得用呢！**
+
+7. 释放并且归还 JdbcConnection
+
+## 6.3 隔离级别
+
+隔离级别其实是**数据库**的概念
+
+其追根究底，还是不同事务之间无法互相感知，导致对同一个数据做操作时候结果和期望不同。
+
+### 6.3.1 未提交读 (read uncommitted)
+
+未提交读的典型例子，是两个事务同时读取一个数据为2且进行扣减，先读取数据的事务A扣减1变成1了，后读取数据的事务B基于1扣减成0，但是A回滚了，B提交了，最后变成0.
+
+**这种就是脏读。**
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-17-48-22-image.png)
+
+### 6.3.2 读写提交(read committed)
+
+读写提交规定只有commit 了的事务才能被读取，那么主要问题会在于多个事务之间的操作不能简单合并，比如两个事务一开始都要扣减只有1的值，对于双方而言一开始都是能操作的，但是只有一个能成功，这就出现了不一致。
+
+不可重读，意味着对于事务而言要操作的值在动态变化，每次读取都不同，因此不可重读。
+
+**克服了脏读，但是不可重复读。**
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-17-53-11-image.png)
+
+### 6.3.3 可重复读(repeatable read)
+
+可重复读主要是对于同一条数据的读取进行阻塞，对于一条数据同时只允许一个事务读取。
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-17-57-24-image.png)
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-17-57-31-image.png)
+
+其可以克服不可重复读，但是无法克服幻读。幻读主要是**条数不一致**。根本原因是对于插入的情况没有上锁，所以查询的过程之中查询条数就会有这样的不一致问题
