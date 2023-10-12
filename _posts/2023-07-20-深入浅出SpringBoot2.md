@@ -948,3 +948,32 @@ spring认为在一个事务之中，最基本的就是这三个方法，所以�
 ![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-17-57-31-image.png)
 
 其可以克服不可重复读，但是无法克服幻读。幻读主要是**条数不一致**。根本原因是对于插入的情况没有上锁，所以查询的过程之中查询条数就会有这样的不一致问题
+
+### 6.3.4 串行化 (serializable)
+
+要求所有sql按照顺序执行，代价就是性能残缺
+
+
+
+下面是隔离级别和可能现象
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-11-21-41-06-image.png)
+
+### 6.3.5 隔离级别配置和使用
+
+可以直接在application.properities 之中加入默认配置，比如：
+
+```yaml
+#隔离级别数字配置的含义：
+#-1 数据库默认隔离级别
+#1  未提交读
+#2  读写提交
+#4  可重复读
+#8  串行化
+#tomcat数据源默认隔离级别
+spring.datasource.tomcat.default-transaction-isolation=2
+#dbcp2数据库连接池默认隔离级别
+#spring.datasource.dbcp2.default-transaction-isolation=2
+```
+
+## 6.4 传播行为
