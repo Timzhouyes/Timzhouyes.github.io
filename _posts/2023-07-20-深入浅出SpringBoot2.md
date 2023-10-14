@@ -977,3 +977,203 @@ spring.datasource.tomcat.default-transaction-isolation=2
 ```
 
 ## 6.4 传播行为
+
+传播行为主要针对的是在需要事务的方法之中调用其他方法时候事务是如何传播的。
+
+### 6.4.1 Required 的测试结果
+
+母方法`批量插入user`调用子方法`插入单一user`，母方法定义 `propagation = Propagation.REQUIRED`, 子方法使用默认传播 `propagation = Propagation.REQUIRED`
+
+测试一个required 的 transaction,  得到结果如图：
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-12-11-35-48-image.png)
+
+### 6.4.2 母方法 required, 子方法 required_new
+
+下面是log
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-12-19-12-01-image.png)
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-12-19-26-49-image.png)
+
+可以看到其会暂停当前的事务，开始新的事务，在新的子方法事务commit 之后才会commit自己。
+
+### 6.4.3 母方法required， 子方法nested
+
+其实现方法是子方法创建新的sqlSession, 同时打上savePoint
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-13-16-54-12-image.png)
+
+spring 对于nested 的处理为：如果数据库支持savePoint， 那么就启用；如果不支持，那么新建事务运行，对子方法而言等价于 required_new。
+
+在nested 传播行为下面，会沿用**当前事务的隔离级别和锁特性**，而 requires_new 可以有自己**独立**的隔离级别和锁特性。
+
+大部分数据库之中，一段sql都可以设置一个标志位，后面代码执行时候如果有异常，只是回滚到标志位的数据状态，不会让标志位之前的代码也回滚。这个标志位就是 savePoint。
+
+
+
+下面是我自己做的savepoint的例子，可以看出来：
+
+1. savepoint 就是将整个sql分成几个小的保存点，如果出问题了可以回滚到某一个点
+
+2. savepoint可以往前覆盖，比如有sp1, sp2, sp3， 可以从sp3 再 rollback to sp2 再 rollback to sp1， 但是到了sp1 之后，sp2和sp3都不可追溯了。
+
+```bash
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> insert into t_user (user_name)  value ('name1');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> savepoint sp1;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
++----+-----------+-----+------+
+1 row in set (0.00 sec)
+
+mysql> insert into t_user (user_name)  value ('name2');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> savepoint sp2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
+| 17 | name2     |   1 | NULL |
++----+-----------+-----+------+
+2 rows in set (0.00 sec)
+
+mysql> insert into t_user (user_name)  value ('name3');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
+| 17 | name2     |   1 | NULL |
+| 18 | name3     |   1 | NULL |
++----+-----------+-----+------+
+3 rows in set (0.01 sec)
+
+mysql> savepoint sp3;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> rollback to sp2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
+| 17 | name2     |   1 | NULL |
++----+-----------+-----+------+
+2 rows in set (0.01 sec)
+
+mysql> rollback to sp1;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
++----+-----------+-----+------+
+1 row in set (0.00 sec)
+
+mysql> rollback to sp2;
+ERROR 1305 (42000): SAVEPOINT sp2 does not exist
+mysql> rollback to sp3;
+ERROR 1305 (42000): SAVEPOINT sp3 does not exist
+mysql> commit;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from t_user;
++----+-----------+-----+------+
+| id | user_name | sex | note |
++----+-----------+-----+------+
+| 16 | name1     |   1 | NULL |
++----+-----------+-----+------+
+1 row in set (0.00 sec)
+
+```
+
+## 6.5 @Transactional 自调用失效问题
+
+自调用失效，是因为代理类本身生成的时候自己调用自己的方法是没有使用`@Transactional` 处理过的代码，相当于注解未生效。需要自己调用自己的话，可以显式指定使用代理生成对象的相应方法。
+
+自调用的service 如下：
+
+```java
+@Service
+public class UserServiceImpl implements UserService {
+
+    @Autowired
+    private UserDao userDao = null;
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED, timeout = 1, propagation = Propagation.REQUIRES_NEW)
+    public int insertUser(User user) {
+        return userDao.insertUser(user);
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED, timeout = 1)
+    public User getUser(Long id) {
+        return userDao.getUser(id);
+    }
+
+    @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
+    public int insertUsers(List<User> userList) {
+        int cnt = 0;
+        for (User user : userList) {
+            cnt += insertUser(user);
+        }
+        return cnt;
+    }
+}
+```
+
+insertUsers(REQUIRED) 调用 insertUser(REQUIRES_NEW), 均为一个类。
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-14-12-52-08-image.png)
+
+可见insertUsers的transaction生效，但是insertUser的没有。这是因为 insertUsers 是由外部类的引用，所以会直接引用已经AOP处理过的代理类，但是对insertUser方法，insertusers在调用的时候并不是调用了AOP处理过的代理类，因此不生效。
+
+处理方式有两种：
+
+1. 不把外层方法和内层方法放在一个类之中（和之前一样）
+
+2. 引用时候去主动获取Spring AOP处理过的类，使用代理方法。
+
+我们下面介绍第二种：
+
+方法改为：
+
+```java
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
+    public int insertUsers(List<User> userList) {
+        int cnt = 0;
+        UserService userServiceEnhanced = applicationContext.getBean(UserService.class);
+        for (User user : userList) {
+            cnt += userServiceEnhanced.insertUser(user);
+        }
+        return cnt;
+    }
+```
+
+即可。 applicationContext 之中存在着所有处理好的代理bean
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-14-13-45-21-image.png)
+
+# 第7章 使用性能利器——redis
