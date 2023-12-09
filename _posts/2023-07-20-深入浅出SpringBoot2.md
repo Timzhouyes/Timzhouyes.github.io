@@ -1172,3 +1172,11 @@ insertUsers(REQUIRED) 调用 insertUser(REQUIRES_NEW), 均为一个类。
 ![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-10-14-13-45-21-image.png)
 
 # 第7章 使用性能利器——redis
+
+## 7.1 spring-data-redis 项目简介
+
+spring 提供的是一个redisConnectionFactory， 这个工厂类可以产生 redisConnection, 这两个部分都是接口，所以jedis之中都是提供了相应的对象implement他们。
+
+![](../img/assets_2023-07-20-深入浅出SpringBoot2/2023-12-04-21-03-30-image.png)
+
+**对于一个redisConnectionFactory应该有什么**
